@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bthuilot/git-scanner/pkg/processor"
 	"github.com/bthuilot/git-scanner/pkg/retrieval"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -20,11 +22,16 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		logrus.Info("Retrieved all commits")
+
+		blobCache := make(map[plumbing.Hash]processor.BlobInfo)
 		for _, commit := range commits {
 			logrus.Infof("Commit: %s", commit.Hash)
+			err = processor.ProcessCommit(&commit, blobCache)
+			if err != nil {
+				logrus.Errorf("Error processing commit %s: %s", commit.Hash, err)
+				continue
+			}
 		}
-
-		// TODO: scan each commit
 	},
 }
 
