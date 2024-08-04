@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"github.com/bthuilot/git-scanner/pkg/cli"
+	"github.com/bthuilot/git-scanner/pkg/processor"
 	"github.com/bthuilot/git-scanner/pkg/retrieval"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -40,11 +42,15 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 		logrus.Info("Retrieved all commits")
-		for _, commit := range commits {
-			logrus.Infof("Commit: %s", commit.Hash)
-		}
 
-		// TODO: scan each commit
+		blobCache := make(map[plumbing.Hash]processor.BlobInfo)
+		for _, commit := range commits {
+			err = processor.ProcessCommit(commit, blobCache)
+			if err != nil {
+				logrus.Error(err)
+				cli.ErrorExit(err)
+			}
+		}
 	},
 }
 
