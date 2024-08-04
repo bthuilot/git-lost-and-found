@@ -255,3 +255,7 @@ terraform.rc
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,emacs,visualstudiocode,dotenv,terraform,go,jetbrains+all
+
+## Custom Ignore ##
+
+bin/*
