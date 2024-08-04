@@ -259,3 +259,5 @@ terraform.rc
 ## Custom Ignore ##
 
 bin/*
+
+results/*
