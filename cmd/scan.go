@@ -13,16 +13,19 @@ import (
 
 var (
 	// Used for flags.
-	repoURL    string
-	repoPath   string
-	outputPath string
+	repoURL       string
+	repoPath      string
+	outputPath    string
+	gitleakConfig string
 )
 
 func init() {
 	scanCmd.PersistentFlags().StringVar(&repoURL, "repo-url", "", "URL of the git repository to scan")
 	scanCmd.PersistentFlags().StringVar(&repoPath, "repo-path", "", "Path to the git repository to scan")
-	scanCmd.PersistentFlags().StringVar(&outputPath, "output-path", "", "Path to the output directory")
+	scanCmd.PersistentFlags().StringVar(&outputPath, "output", "", "Path to the output directory")
+	scanCmd.PersistentFlags().StringVar(&gitleakConfig, "gitleaks-config", "", "Path to the gitleaks config file")
 	_ = scanCmd.MarkPersistentFlagFilename("repo-path")
+	_ = scanCmd.MarkPersistentFlagFilename("gitleaks-config")
 	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
 	scanCmd.MarkFlagsOneRequired("repo-url", "repo-path")
 	rootCmd.AddCommand(scanCmd)
@@ -33,11 +36,13 @@ var scanCmd = &cobra.Command{
 	Short: "scan all commits of a git repository",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			output *os.File = os.Stdin
-			err    error
+			output  = os.Stdout
+			err     error
+			results []processor.GitleaksResult
 		)
 		if outputPath != "" && outputPath != "-" {
 			output, err = os.Create(outputPath)
+			defer output.Close()
 			if err != nil {
 				logrus.Error(err)
 				cli.ErrorExit(err)
@@ -58,13 +63,28 @@ var scanCmd = &cobra.Command{
 		}
 		logrus.Info("Retrieved all commits")
 
-		blobCache := make(map[plumbing.Hash]processor.BlobInfo)
+		blobCache := make(map[plumbing.Hash]struct{})
+		uniqueSecrets := make(map[string]struct{})
 		for _, commit := range commits {
-			err = processor.ProcessCommit(commit, output, blobCache)
+			commitResults, err := processor.ProcessCommit(commit, blobCache, processor.GitleaksArgs{Config: gitleakConfig})
 			if err != nil {
-				logrus.Error(err)
-				cli.ErrorExit(err)
+				logrus.Errorf("error processing commit %s: %s", commit.String(), err)
+				continue
 			}
+			for _, result := range commitResults {
+				if _, exists := uniqueSecrets[result.Secret]; !exists {
+					results = append(results, result)
+					uniqueSecrets[result.Secret] = struct{}{}
+				}
+			}
+		}
+
+		logrus.Infof("processed %d commits and %d blob", len(commits), len(blobCache))
+		logrus.Infof("found %d secrets", len(results))
+
+		if err := cli.WriteResults(output, results); err != nil {
+			logrus.Error(err)
+			cli.ErrorExit(err)
 		}
 	},
 }

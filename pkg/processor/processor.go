@@ -11,13 +11,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessCommit(commit *object.Commit, output io.Writer, blobCache map[plumbing.Hash]BlobInfo) error {
+func ProcessCommit(commit *object.Commit, blobCache map[plumbing.Hash]struct{}, args GitleaksArgs) ([]GitleaksResult, error) {
 	tree, err := commit.Tree()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return tree.Files().ForEach(func(f *object.File) error {
+	var results []GitleaksResult
+
+	err = tree.Files().ForEach(func(f *object.File) error {
 		blob := f.Blob
 
 		// Check if we've already processed this blob
@@ -27,90 +29,71 @@ func ProcessCommit(commit *object.Commit, output io.Writer, blobCache map[plumbi
 				return err
 			}
 			defer content.Close()
-			contentBytes, err := io.ReadAll(content)
+
+			// add blob to cache
+			blobCache[blob.Hash] = struct{}{}
+			found, err := scanContent(commit, f.Name, content, args)
 			if err != nil {
 				return err
 			}
-
-			blobCache[blob.Hash] = BlobInfo{
-				Hash:    blob.Hash,
-				Content: contentBytes,
-			}
-			scanContent(commit, f.Name, contentBytes, output)
+			results = append(results, found...)
 		}
 		return nil
 	})
+
+	return results, err
 }
 
-func scanContent(commit *object.Commit, fileName string, content []byte, output io.Writer) {
+func scanContent(commit *object.Commit, fileName string, content io.Reader, args GitleaksArgs) (results []GitleaksResult, err error) {
 	logrus.Infof("Scanning content for file: %s\n", fileName)
-	stdOut, stdErr, err := runGitleaksScan(string(content))
+	stdOut, stdErr, err := runGitleaksScan(content, args)
 	if err != nil {
 		logrus.Errorf("Failed to run Gitleaks scan: %v", err)
-		logrus.Errorf("Gitleaks scan stdOut: %s", stdOut)
-		logrus.Errorf("Gitleaks scan stderr: %s", stdErr)
-
-		// marshall the stdOut into a GitleaksResult struct
-		// and print the raw Secret
-
-		var results []GitleaksResult
-		err := json.Unmarshal([]byte(stdOut), &results)
-		if err != nil {
-			logrus.Errorf("Failed to unmarshal Gitleaks result: %v", err)
-		}
-
-		for _, result := range results {
-			result.Commit = commit.Hash.String()
-			result.File = fileName
-			result.Author = commit.Author.String()
-			logrus.Errorf("Gitleaks scan result for file %s: %s\n", fileName, result.Secret)
-		}
-
-		// write results to a file
-		output.Write([]byte(stdOut))
-		//if err := os.WriteFile(fmt.Sprintf("results/gitleaks_%s_results.json", fileName), []byte(stdOut), 0644); err != nil {
-		//	logrus.Errorf("Failed to write Gitleaks results to file: %v", err)
-		//}
-
-		return
+		stdErrOutput, _ := io.ReadAll(stdErr)
+		logrus.Errorf("Stderr: %s", string(stdErrOutput))
+		return nil, err
 	}
+
+	var r []GitleaksResult
+	if err = json.NewDecoder(stdOut).Decode(&r); err != nil {
+		logrus.Errorf("Failed to unmarshal Gitleaks result: %v", err)
+		return nil, err
+	}
+
+	for _, result := range r {
+		logrus.Debugf("Gitleaks scan result for file %s: %s\n", fileName, result.Secret)
+		result.Commit = commit.Hash.String()
+		result.File = fileName
+		result.Author = commit.Author.String()
+		results = append(results, result)
+	}
+
+	return
 	// logrus.Infof("Gitleaks scan result for file %s: %s\n", fileName, result)
 }
 
-func runGitleaksScan(content string) (string, string, error) {
+func runGitleaksScan(content io.Reader, args GitleaksArgs) (io.Reader, io.Reader, error) {
 	logrus.Info("Starting Gitleaks scan")
 
-	cmd := exec.Command("gitleaks", "detect", "--pipe", "--report-format", "json", "--report-path", "/dev/stdout")
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		logrus.Errorf("Failed to get stdin pipe: %v", err)
-		return "", "", err
+	cmd := exec.Command("gitleaks", "detect", "--pipe", "--report-format", "json", "--report-path", "/dev/stdout", "--exit-code", "0")
+	if args.Config != "" {
+		cmd.Args = append(cmd.Args, "--config", args.Config)
 	}
+	cmd.Stdin = content
 
-	var outBuf, errBuf bytes.Buffer
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &errBuf
+	outBuf, errBuf := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
+	cmd.Stdout = outBuf
+	cmd.Stderr = errBuf
 
 	if err := cmd.Start(); err != nil {
 		logrus.Errorf("Failed to start cmd: %v", err)
-		return "", "", err
+		return outBuf, errBuf, err
 	}
-
-	go func() {
-		defer stdin.Close()
-		_, err := io.WriteString(stdin, content)
-		if err != nil {
-			logrus.Errorf("Failed to write to stdin: %v", err)
-		}
-	}()
 
 	if err := cmd.Wait(); err != nil {
 		logrus.Errorf("Cmd failed (FINDING): %v", err)
-		return outBuf.String(), errBuf.String(), err
+		return outBuf, errBuf, err
 	}
 
-	logrus.Debugf("Gitleaks scan stdout:\n%s", outBuf.String())
-	logrus.Debugf("Gitleaks scan stderr:\n%s", errBuf.String())
-	return outBuf.String(), errBuf.String(), nil
+	return outBuf, errBuf, nil
 }

@@ -29,3 +29,7 @@ type GitleaksResult struct {
 	RuleID      string   `json:"RuleID"`
 	Fingerprint string   `json:"Fingerprint"`
 }
+
+type GitleaksArgs struct {
+	Config string `json:"config"`
+}
