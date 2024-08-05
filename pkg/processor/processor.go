@@ -36,14 +36,13 @@ func ProcessCommit(commit *object.Commit, output io.Writer, blobCache map[plumbi
 				Hash:    blob.Hash,
 				Content: contentBytes,
 			}
-
-			scanContent(f.Name, contentBytes, output)
+			scanContent(commit, f.Name, contentBytes, output)
 		}
 		return nil
 	})
 }
 
-func scanContent(fileName string, content []byte, output io.Writer) {
+func scanContent(commit *object.Commit, fileName string, content []byte, output io.Writer) {
 	logrus.Infof("Scanning content for file: %s\n", fileName)
 	stdOut, stdErr, err := runGitleaksScan(string(content))
 	if err != nil {
@@ -61,6 +60,9 @@ func scanContent(fileName string, content []byte, output io.Writer) {
 		}
 
 		for _, result := range results {
+			result.Commit = commit.Hash.String()
+			result.File = fileName
+			result.Author = commit.Author.String()
 			logrus.Errorf("Gitleaks scan result for file %s: %s\n", fileName, result.Secret)
 		}
 
