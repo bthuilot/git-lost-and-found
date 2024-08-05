@@ -8,17 +8,20 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
 	// Used for flags.
-	repoURL  string
-	repoPath string
+	repoURL    string
+	repoPath   string
+	outputPath string
 )
 
 func init() {
 	scanCmd.PersistentFlags().StringVar(&repoURL, "repo-url", "", "URL of the git repository to scan")
 	scanCmd.PersistentFlags().StringVar(&repoPath, "repo-path", "", "Path to the git repository to scan")
+	scanCmd.PersistentFlags().StringVar(&outputPath, "output-path", "", "Path to the output directory")
 	_ = scanCmd.MarkPersistentFlagFilename("repo-path")
 	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
 	scanCmd.MarkFlagsOneRequired("repo-url", "repo-path")
@@ -27,8 +30,20 @@ func init() {
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
-	Short: "",
+	Short: "scan all commits of a git repository",
 	Run: func(cmd *cobra.Command, args []string) {
+		var (
+			output *os.File = os.Stdin
+			err    error
+		)
+		if outputPath != "" && outputPath != "-" {
+			output, err = os.Create(outputPath)
+			if err != nil {
+				logrus.Error(err)
+				cli.ErrorExit(err)
+			}
+		}
+
 		// clone repo or import existing repo
 		r, err := getGitRepository()
 		if err != nil {
@@ -45,7 +60,7 @@ var scanCmd = &cobra.Command{
 
 		blobCache := make(map[plumbing.Hash]processor.BlobInfo)
 		for _, commit := range commits {
-			err = processor.ProcessCommit(commit, blobCache)
+			err = processor.ProcessCommit(commit, output, blobCache)
 			if err != nil {
 				logrus.Error(err)
 				cli.ErrorExit(err)

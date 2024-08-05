@@ -3,9 +3,7 @@ package processor
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 	"os/exec"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -13,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func ProcessCommit(commit *object.Commit, blobCache map[plumbing.Hash]BlobInfo) error {
+func ProcessCommit(commit *object.Commit, output io.Writer, blobCache map[plumbing.Hash]BlobInfo) error {
 	tree, err := commit.Tree()
 	if err != nil {
 		return err
@@ -39,13 +37,13 @@ func ProcessCommit(commit *object.Commit, blobCache map[plumbing.Hash]BlobInfo) 
 				Content: contentBytes,
 			}
 
-			scanContent(f.Name, contentBytes)
+			scanContent(f.Name, contentBytes, output)
 		}
 		return nil
 	})
 }
 
-func scanContent(fileName string, content []byte) {
+func scanContent(fileName string, content []byte, output io.Writer) {
 	logrus.Infof("Scanning content for file: %s\n", fileName)
 	stdOut, stdErr, err := runGitleaksScan(string(content))
 	if err != nil {
@@ -67,9 +65,10 @@ func scanContent(fileName string, content []byte) {
 		}
 
 		// write results to a file
-		if err := os.WriteFile(fmt.Sprintf("results/gitleaks_%s_results.json", fileName), []byte(stdOut), 0644); err != nil {
-			logrus.Errorf("Failed to write Gitleaks results to file: %v", err)
-		}
+		output.Write([]byte(stdOut))
+		//if err := os.WriteFile(fmt.Sprintf("results/gitleaks_%s_results.json", fileName), []byte(stdOut), 0644); err != nil {
+		//	logrus.Errorf("Failed to write Gitleaks results to file: %v", err)
+		//}
 
 		return
 	}
