@@ -140,14 +140,14 @@ var scanCmd = &cobra.Command{
 		}
 
 		// hydrate the results with the raw blob
-		for i, result := range results {
-			file, err := os.ReadFile(outputPath + "/rawblobs/" + result.File)
-			if err != nil {
-				logrus.Error(err)
-				cli.ErrorExit(err)
-			}
-			results[i].RawBlob = string(file)
-		}
+		// for i, result := range results {
+		// 	file, err := os.ReadFile(outputPath + "/rawblobs/" + result.File)
+		// 	if err != nil {
+		// 		logrus.Error(err)
+		// 		cli.ErrorExit(err)
+		// 	}
+		// 	results[i].RawBlob = string(file)
+		// }
 
 		var resFile *os.File
 		if outputPath != "" {
@@ -160,7 +160,7 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 
-		err = reporter.WriteReport(resFile, results)
+		err = reporter.WriteReport(resFile, results, outputPath)
 		if err != nil {
 			logrus.Error(err)
 			cli.ErrorExit(err)

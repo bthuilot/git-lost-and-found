@@ -28,7 +28,6 @@ type GitleaksResult struct {
 	Tags        []string `json:"Tags"`
 	RuleID      string   `json:"RuleID"`
 	Fingerprint string   `json:"Fingerprint"`
-	RawBlob     string
 }
 
 type SecretsReport struct {

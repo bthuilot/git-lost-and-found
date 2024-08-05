@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func groupBySecrets(results []processor.GitleaksResult) map[string][]processor.SecretsReport {
+func groupBySecrets(results []processor.GitleaksResult, outputPath string) map[string][]processor.SecretsReport {
 	secretsMap := make(map[string][]processor.SecretsReport)
 
 	for _, report := range results {
@@ -18,7 +18,12 @@ func groupBySecrets(results []processor.GitleaksResult) map[string][]processor.S
 		secretsReport := processor.SecretsReport{}
 		secretsReport.BlobHash = report.Fingerprint
 		secretsReport.FileName = report.File
-		secretsReport.RawBlob = report.RawBlob
+		file, err := os.ReadFile(outputPath + "/rawblobs/" + report.File)
+		if err != nil {
+			logrus.Error(err)
+			file = []byte{}
+		}
+		secretsReport.RawBlob = string(file)
 		secretsReport.Results = append(secretsReport.Results, report)
 
 		secretsMap[report.Match] = append(secretsMap[report.Match], secretsReport)
@@ -27,8 +32,8 @@ func groupBySecrets(results []processor.GitleaksResult) map[string][]processor.S
 	return secretsMap
 }
 
-func WriteReport(output *os.File, results []processor.GitleaksResult) error {
-	secretsMap := groupBySecrets(results)
+func WriteReport(output *os.File, results []processor.GitleaksResult, outputPath string) error {
+	secretsMap := groupBySecrets(results, outputPath)
 	logrus.Infof("Raw report %#v", results)
 	logrus.Infof("Writing report with %d commits", len(secretsMap))
 	logrus.Infof("Writing to file %s", output.Name())
