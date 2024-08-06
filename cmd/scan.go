@@ -61,6 +61,11 @@ var scanCmd = &cobra.Command{
 		logrus.Info("Cloned or imported repository")
 
 		commits, err := retrieval.LookupAllCommits(r)
+		logrus.Infof("Retrieved %d commits", len(commits))
+		for _, commit := range commits {
+			logrus.Infof("Commit: %s", commit.Hash)
+		}
+		os.Exit(0)
 		if err != nil {
 			logrus.Error(err)
 			cli.ErrorExit(err)
