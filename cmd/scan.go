@@ -1,14 +1,14 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/bthuilot/git-scanner/pkg/cli"
 	"github.com/bthuilot/git-scanner/pkg/processor"
 	"github.com/bthuilot/git-scanner/pkg/retrieval"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var (
@@ -17,6 +17,7 @@ var (
 	repoPath      string
 	outputPath    string
 	gitleakConfig string
+	numWorkers    int = 4 // Number of concurrent workers, can be configured
 )
 
 func init() {
@@ -48,6 +49,7 @@ var scanCmd = &cobra.Command{
 				cli.ErrorExit(err)
 			}
 		}
+		logrus.Infof("Scanning repository %s", repoURL)
 
 		// clone repo or import existing repo
 		r, err := getGitRepository()
@@ -56,6 +58,8 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 
+		logrus.Info("Cloned or imported repository")
+
 		commits, err := retrieval.LookupAllCommits(r)
 		if err != nil {
 			logrus.Error(err)
@@ -63,29 +67,39 @@ var scanCmd = &cobra.Command{
 		}
 		logrus.Info("Retrieved all commits")
 
-		blobCache := make(map[plumbing.Hash]struct{})
-		uniqueSecrets := make(map[string]struct{})
-		for _, commit := range commits {
-			commitResults, err := processor.ProcessCommit(commit, blobCache, processor.GitleaksArgs{Config: gitleakConfig})
-			if err != nil {
-				logrus.Errorf("error processing commit %s: %s", commit.String(), err)
-				continue
-			}
-			for _, result := range commitResults {
-				if _, exists := uniqueSecrets[result.Secret]; !exists {
-					results = append(results, result)
-					uniqueSecrets[result.Secret] = struct{}{}
-				}
-			}
-		}
-
-		logrus.Infof("processed %d commits and %d blob", len(commits), len(blobCache))
-		logrus.Infof("found %d secrets", len(results))
-
-		if err := cli.WriteResults(output, results); err != nil {
+		// Process all commits and gather results
+		results, err = processor.ProcessCommits(commits, processor.GitleaksArgs{Config: gitleakConfig})
+		if err != nil {
 			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
+
+		logrus.Infof("Processed %d commits", len(commits))
+		logrus.Infof("Found %d secrets", len(results))
+
+		uniqueSecrets := make(map[string]processor.GitleaksResult)
+		for _, result := range results {
+			if _, exists := uniqueSecrets[result.Secret]; !exists {
+				results = append(results, result)
+				uniqueSecrets[result.Secret] = result
+			}
+		}
+
+		if len(results) > 0 {
+			logrus.Infof("Writing results to %s", outputPath)
+			if err := cli.WriteResults(output, uniqueSecrets); err != nil {
+				logrus.Error(err)
+				cli.ErrorExit(err)
+			}
+		} else {
+			if _, err := os.Stat(outputPath); err == nil {
+				if err := os.Remove(outputPath); err != nil {
+					logrus.Error(err)
+					cli.ErrorExit(err)
+				}
+			}
+		}
+		logrus.Info("Scan completed successfully")
 	},
 }
 

@@ -13,8 +13,8 @@ func CloneRepo(repoURL string) (*git.Repository, error) {
 		return nil, err
 	}
 	return git.PlainClone(tmpDir, false, &git.CloneOptions{
-		URL: repoURL,
-		// Mirror: true,
+		URL:    repoURL,
+		Mirror: true,
 	})
 }
 
