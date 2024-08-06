@@ -2,7 +2,7 @@ import json
 import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import subprocess
 
 def get_repos_from_org(org_url):
     org_name = org_url.split("/")[-1]
@@ -19,8 +19,14 @@ def scan_repo(repo_url):
     print(f"Scanning repository: {repo_url}")
     project_name = repo_url.split("/")[-1]
     git_group = repo_url.split("/")[-2]
-    command = f"./bin/git-scanner scan --output results/{git_group}/{project_name}.json --repo-url {repo_url}"
-    os.system(command)
+    command = [
+        "docker", "run", "-v", f"{os.getcwd()}/results:/results", "-t",
+        "git-scanner:latest", "scan", "--output", f"/results/{git_group}/{project_name}.json", "--repo-url", repo_url
+    ]
+    process = subprocess.Popen(command)
+    process.wait()
+    print(f"Finished scanning repository: {repo_url}")
+
 
 
 def main():
@@ -36,15 +42,13 @@ def main():
             # "https://github.com/newrelic",
             # "https://github.com/Shopify",
             # "https://github.com/datadog",
-            "https://github.com/azure",
-            "https://github.com/mapbox",
-            "https://github.com/cloudflare",
+            # "https://github.com/azure",
+            # "https://github.com/mapbox",
+            # "https://github.com/cloudflare",
             "https://github.com/netflix",
             "https://github.com/openai",
-            "https://github.com/google-deepmind"
+            "https://github.com/google-deepmind",
             "https://github.com/microsoft",
-            
-            
             
             # "https://github.com/leather-wallet",
             # "https://github.com/fireblocks",
@@ -179,23 +183,21 @@ def main():
 
         repos = get_repos_from_org(org_url)
 
-        for repo_url in repos:
-            scan_repo(repo_url)
-        print(f"Finished scanning repository: {repo_url}")
+        # for repo_url in repos:
+            # scan_repo(repo_url)
+        # print(f"Finished scanning repository: {repo_url}")
 
-        # ensure results/<org_name> directory exists
-        # with ThreadPoolExecutor(max_workers=3) as executor:
-        #     futures = {
-        #         executor.submit(scan_repo, repo_url): repo_url for repo_url in repos
-        #     }
-        #     for future in as_completed(futures):
-        #         repo_url = futures[future]
-        #         try:
-        #             future.result()
-        #             print(f"Finished scanning repository: {repo_url}")
-        #         except Exception as e:
-        #             print(f"Error scanning repository {repo_url}: {e}")
-
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {
+                executor.submit(scan_repo, repo_url): repo_url for repo_url in repos
+            }
+            for future in as_completed(futures):
+                repo_url = futures[future]
+                try:
+                    future.result()
+                    print(f"Finished scanning repository: {repo_url}")
+                except Exception as e:
+                    print(f"Error scanning repository {repo_url}: {e}")
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,7 @@ import (
 	"github.com/bthuilot/git-scanner/pkg/processor"
 	"github.com/bthuilot/git-scanner/pkg/retrieval"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +18,6 @@ var (
 	repoPath      string
 	outputPath    string
 	gitleakConfig string
-	numWorkers    int = 4 // Number of concurrent workers, can be configured
 )
 
 func init() {
@@ -61,34 +61,31 @@ var scanCmd = &cobra.Command{
 		logrus.Info("Cloned or imported repository")
 
 		commits, err := retrieval.LookupAllCommits(r)
-		logrus.Infof("Retrieved %d commits", len(commits))
-		for _, commit := range commits {
-			logrus.Infof("Commit: %s", commit.Hash)
-		}
-		os.Exit(0)
 		if err != nil {
 			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
-		logrus.Info("Retrieved all commits")
+		logrus.Infof("Retrieved %d commits", len(commits))
 
 		// Process all commits and gather results
-		results, err = processor.ProcessCommits(commits, processor.GitleaksArgs{Config: gitleakConfig})
-		if err != nil {
-			logrus.Error(err)
-			cli.ErrorExit(err)
-		}
-
-		logrus.Infof("Processed %d commits", len(commits))
-		logrus.Infof("Found %d secrets", len(results))
-
+		blobCache := make(map[plumbing.Hash]struct{})
 		uniqueSecrets := make(map[string]processor.GitleaksResult)
-		for _, result := range results {
-			if _, exists := uniqueSecrets[result.Secret]; !exists {
-				results = append(results, result)
-				uniqueSecrets[result.Secret] = result
+		for _, commit := range commits {
+			logrus.Info("Processing commit: ", commit.Hash)
+			commitResults, err := processor.ProcessCommit(commit, blobCache, processor.GitleaksArgs{Config: gitleakConfig})
+			if err != nil {
+				logrus.Errorf("error processing commit %s: %s", commit.String(), err)
+				continue
+			}
+			for _, result := range commitResults {
+				if _, exists := uniqueSecrets[result.Secret]; !exists {
+					results = append(results, result)
+					uniqueSecrets[result.Secret] = result
+				}
 			}
 		}
+
+		logrus.Infof("Processed all commits and found %d secrets", len(results))
 
 		if len(results) > 0 {
 			logrus.Infof("Writing results to %s", outputPath)
