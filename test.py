@@ -38,96 +38,72 @@ def scan_repo(repo_url):
     process.wait()
 
 
+[]
+
+
 def main():
     data = {
         "organizations": [
-            # "https://github.com/yahoo",
-            # "https://github.com/Agoric",
-            # "https://github.com/argoproj",
-            # "https://github.com/netlify",
-            # "https://github.com/MariaDB",
-            # "https://github.com/nextcloud",
-            # "https://github.com/slackhq",
-            # "https://github.com/newrelic",
-            # "https://github.com/Shopify",
-            # "https://github.com/datadog",
-            # "https://github.com/azure",
-            # "https://github.com/mapbox",
-            # "https://github.com/cloudflare",
-            # "https://github.com/netflix",
-            "https://github.com/yahoo",
-            "https://github.com/yelp",
-            "https://github.com/openai",
-            "https://github.com/google-deepmind",
-            "https://github.com/microsoft",
-            # "https://github.com/leather-wallet",
-            # "https://github.com/fireblocks",
-            # "https://github.com/worldcoin",
-            # "https://github.com/okx",
-            # "https://github.com/tronprotocol",
-            # "https://github.com/coralcube-oss",
-            # "https://github.com/magiceden-oss",
-            # "https://github.com/USStateDept",
-            # "https://github.com/MetaMask",
-            # "https://github.com/sorare",
-            # "https://github.com/strongdm",
-            # "https://github.com/rundeck",
-            # "https://github.com/endojs",
-            # "https://github.com/moonpay",
-            # "https://github.com/Electron",
-            # "https://github.com/Nginx",
-            # "https://github.com/apache",
-            # "https://github.com/curl",
-            # "https://github.com/django",
-            # "https://github.com/libuv",
-            # "https://github.com/nodejs",
-            # "https://github.com/openssl",
-            # "https://github.com/rack",
-            # "https://github.com/rails",
-            # "https://github.com/ruby",
-            # "https://github.com/rubygems",
-            # "https://github.com/rust-lang",
-            # "https://github.com/spiffe",
-            # "https://github.com/18f",
-            # "https://github.com/gsa",
-            # "https://github.com/snowplow",
-            # "https://github.com/hashgraph",
-            # "https://github.com/fastify",
-            # "https://github.com/WorldHealthOrganization",
-            # "https://github.com/stripe",
-            # "https://github.com/DopplerHQ",
-            # "https://github.com/thesokrin",
-            # "https://github.com/grindrlabs",
-            # "https://github.com/OpenMage",
-            # "https://github.com/jitsi",
-            # "https://github.com/DefectDojo",
-            # "https://github.com/Dynatrace",
-            # "https://github.com/reddit-archive",
-            # "https://github.com/mattermost",
-            # "https://github.com/etherspot",
-            # "https://github.com/pyca",
-            # "https://github.com/innocraft",
-            # "https://github.com/matomo-org",
-            # "https://github.com/8x8",
-            # "https://github.com/smartcontractkit",
-            # "https://github.com/pixiv",
-            # "https://github.com/arkadiyt",
-            # "https://github.com/cometbft",
-            # "https://github.com/CosmWasm",
-            # "https://github.com/cosmos",
-            # "https://github.com/strangelove-ventures",
-            # "https://github.com/duckduckgo",
-            # "https://github.com/crypto-com",
-            # "https://github.com/trycourier",
-            # "https://github.com/roundcube",
-            # "https://github.com/Valvesoftware",
-            # "https://github.com/binary-com",
-            # "https://github.com/deriv-com",
-            # "https://github.com/fetlife",
-            # "https://github.com/smooch",
-            # "https://github.com/irccloud",
-            # "https://github.com/concrete5",
-            # "https://github.com/arkime",
+            # "https://github.com/slackhq",  # Slack
+            # "https://github.com/newrelic",  # New Relic
+            # "https://github.com/Shopify",  # Shopify
+            # "https://github.com/datadog",  # Datadog
+            # "https://github.com/azure",  # Microsoft Azure
+            "https://github.com/mapbox",  # Mapbox
+            "https://github.com/cloudflare",  # Cloudflare
+            "https://github.com/netflix",  # Netflix
+            "https://github.com/uber",  # Uber
+            "https://github.com/github",  # GitHub
+            "https://github.com/coinbase",  # Coinbase
+            "https://github.com/spotify",  # Spotify
+            "https://github.com/airbnb",  # Airbnb
+            "https://github.com/intel",  # Intel
+            "https://github.com/stripe",  # Stripe
+            "https://github.com/square",  # Square
+            "https://github.com/lyft",  # Lyft
+            "https://github.com/zoom",  # Zoom
+            "https://github.com/okta",  # Okta
+            "https://github.com/pinterest",  # Pinterest
+            "https://github.com/teslamotors",  # Tesla
+            "https://github.com/atlassian",  # Atlassian
+            "https://github.com/dropbox",  # Dropbox
+            "https://github.com/indeedeng",  # Indeed
+            "https://github.com/twilio",  # Twilio
+            "https://github.com/opensea",  # OpenSea
+            "https://github.com/yelp",  # Yelp
+            "https://github.com/bugcrowd",  # Bugcrowd
+            "https://github.com/cisco",  # Cisco
+            "https://github.com/rapid7",  # Rapid7
+            "https://github.com/elastic",  # Elastic
+            "https://github.com/sonatype",  # Sonatype
+            "https://github.com/launchdarkly",  # LaunchDarkly
+            "https://github.com/hackerone",  # HackerOne
+            "https://github.com/segmentio",  # Segment
+            "https://github.com/coinbase",  # Coinbase
+            "https://github.com/fastly",  # Fastly
+            "https://github.com/1password",  # 1Password
+            "https://github.com/algolia",  # Algolia
+            "https://github.com/bugcrowd",  # Bugcrowd
+            "https://github.com/basecamp",  # Basecamp
+            "https://github.com/kayak",  # KAYAK
+            "https://github.com/valvesoftware",  # Valve (Steam)
+            "https://github.com/gitlabhq",  # GitLab
+            "https://github.com/linkedin",  # LinkedIn
+            "https://github.com/expedia",  # Expedia
+            "https://github.com/bookingcom",  # Booking.com
+            "https://github.com/snapchat",  # Snapchat
+            "https://github.com/adobe",  # Adobe
+            "https://github.com/facebook",  # Facebook
+            "https://github.com/google",  # Google
+            "https://github.com/amazon",  # Amazon
+            "https://github.com/apple",  # Apple
+            "https://github.com/microsoft",  # Microsoft
+            "https://github.com/ibm",  # IBM
+            "https://github.com/oracle",  # Oracle
+            "https://github.com/akamai",  # Akamai
+            "https://github.com/duckduckgo",  # DuckDuckGo
+            "https://github.com/bitwarden",  # Bitwarden
+            "https://github.com/discord",  # Discord
         ],
         "repositories": [
             "https://github.com/circlefin/noble-cctp",
@@ -187,26 +163,28 @@ def main():
             "https://github.com/arkadiyt/zoom-redirector",
         ],
     }
-
-    for org_url in data["organizations"]:
+    repos_to_scan = []
+    import time
+    for org_url in list(set(data["organizations"])):
         os.makedirs(os.path.join("results", org_url.split("/")[-1]), exist_ok=True)
-
         repos = get_repos_from_org(org_url)
+        repos_to_scan += repos
+        time.sleep(1)
 
         # for repo_url in repos:
         # scan_repo(repo_url)
         # print(f"Finished scanning repository: {repo_url}")
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = {
-                executor.submit(scan_repo, repo_url): repo_url for repo_url in repos
-            }
-            for future in as_completed(futures):
-                repo_url = futures[future]
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"Error scanning repository {repo_url}: {e}")
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(scan_repo, repo_url): repo_url for repo_url in repos_to_scan
+        }
+        for future in as_completed(futures):
+            repo_url = futures[future]
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error scanning repository {repo_url}: {e}")
 
 
 if __name__ == "__main__":
