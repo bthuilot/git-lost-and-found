@@ -56,7 +56,7 @@ func ProcessCommit(commit *object.Commit, blobCache map[plumbing.Hash]struct{}, 
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		if shouldSkip(f.Name) {
-			logrus.Infof("Skipping file: %s\n", f.Name)
+			logrus.Debugf("Skipping file: %s\n", f.Name)
 			return nil
 		}
 
@@ -120,7 +120,7 @@ func ProcessCommit(commit *object.Commit, blobCache map[plumbing.Hash]struct{}, 
 }
 
 func scanContent(commit *object.Commit, fileName string, content io.Reader, args GitleaksArgs) (results []GitleaksResult, err error) {
-	logrus.Infof("Scanning content for file: %s\n", fileName)
+	logrus.Debugf("Scanning content for file: %s\n", fileName)
 	stdOut, stdErr, err := runGitleaksScan(content, args)
 	if err != nil {
 		logrus.Errorf("Failed to run Gitleaks scan: %v", err)
@@ -150,7 +150,7 @@ func scanContent(commit *object.Commit, fileName string, content io.Reader, args
 	return
 }
 func runGitleaksScan(content io.Reader, args GitleaksArgs) (io.Reader, io.Reader, error) {
-	logrus.Info("Starting Gitleaks scan")
+	logrus.Debugf("Starting Gitleaks scan")
 
 	cmd := exec.Command("gitleaks", "detect", "--pipe", "--report-format", "json", "--report-path", "/dev/stdout", "--exit-code", "0")
 	if args.Config != "" {

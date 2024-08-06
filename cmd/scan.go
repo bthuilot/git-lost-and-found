@@ -58,20 +58,20 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 
-		logrus.Info("Cloned or imported repository")
+		logrus.Debug("Cloned or imported repository")
 
 		commits, err := retrieval.LookupAllCommits(r)
 		if err != nil {
 			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
-		logrus.Infof("Retrieved %d commits", len(commits))
+		logrus.Infof("Gathered %d commits", len(commits))
 
 		// Process all commits and gather results
 		blobCache := make(map[plumbing.Hash]struct{})
 		uniqueSecrets := make(map[string]processor.GitleaksResult)
 		for _, commit := range commits {
-			logrus.Info("Processing commit: ", commit.Hash)
+			logrus.Debug("Processing commit: ", commit.Hash)
 			commitResults, err := processor.ProcessCommit(commit, blobCache, processor.GitleaksArgs{Config: gitleakConfig})
 			if err != nil {
 				logrus.Errorf("error processing commit %s: %s", commit.String(), err)
@@ -85,7 +85,7 @@ var scanCmd = &cobra.Command{
 			}
 		}
 
-		logrus.Infof("Processed all commits and found %d secrets", len(results))
+		logrus.Infof("Processed all commits and found %d secrets for repo %s", len(results), repoURL)
 
 		if len(results) > 0 {
 			logrus.Infof("Writing results to %s", outputPath)
