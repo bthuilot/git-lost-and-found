@@ -189,7 +189,17 @@ func processBatch(batch []*blobMetadata, args GitleaksArgs) ([]GitleaksResult, e
 			if bytes.Contains(blobFile, []byte(result.Secret)) {
 				results = append(results, GitleaksResult{
 					Secret:      result.Secret,
+					StartLine:   result.StartLine,
+					EndLine:     result.EndLine,
+					StartColumn: result.StartColumn,
+					EndColumn:   result.EndColumn,
+					Match:       result.Match,
+					SymlinkFile: result.SymlinkFile,
+					Entropy:     result.Entropy,
 					Commit:      metadata.commit.Hash.String(),
+					Message:     metadata.commit.Message,
+					Date:        metadata.commit.Author.When.String(),
+					Email:       metadata.commit.Author.Email,
 					File:        metadata.name,
 					Author:      metadata.commit.Author.String(),
 					RawFile:     string(blobFile),
