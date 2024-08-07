@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"os"
-
+	"fmt"
 	"github.com/bthuilot/git-scanner/pkg/cli"
-	"github.com/bthuilot/git-scanner/pkg/processor"
-	"github.com/bthuilot/git-scanner/pkg/retrieval"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/bthuilot/git-scanner/pkg/git"
+	"github.com/bthuilot/git-scanner/pkg/scanning"
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -18,13 +17,15 @@ var (
 	repoPath      string
 	outputPath    string
 	gitleakConfig string
+	keepRefs      bool
 )
 
 func init() {
-	scanCmd.PersistentFlags().StringVar(&repoURL, "repo-url", "", "URL of the git repository to scan")
-	scanCmd.PersistentFlags().StringVar(&repoPath, "repo-path", "", "Path to the git repository to scan")
-	scanCmd.PersistentFlags().StringVar(&outputPath, "output", "", "Path to the output directory")
-	scanCmd.PersistentFlags().StringVar(&gitleakConfig, "gitleaks-config", "", "Path to the gitleaks config file")
+	scanCmd.PersistentFlags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
+	scanCmd.PersistentFlags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
+	scanCmd.PersistentFlags().StringVarP(&outputPath, "output", "o", "", "Path to the output directory")
+	scanCmd.PersistentFlags().StringVarP(&gitleakConfig, "gitleaks-config", "c", "", "Path to the gitleaks config file")
+	scanCmd.PersistentFlags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
 	_ = scanCmd.MarkPersistentFlagFilename("repo-path")
 	_ = scanCmd.MarkPersistentFlagFilename("gitleaks-config")
 	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
@@ -37,89 +38,77 @@ var scanCmd = &cobra.Command{
 	Short: "scan all commits of a git repository",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			output  = os.Stdout
-			err     error
-			results []processor.GitleaksResult
+			output = os.Stdout
+			err    error
 		)
 		if outputPath != "" && outputPath != "-" {
 			output, err = os.Create(outputPath)
 			defer output.Close()
 			if err != nil {
-				logrus.Error(err)
 				cli.ErrorExit(err)
 			}
 		}
 
-		r, err := getGitRepository()
+		// clone repo or import existing repo
+		r, dir, err := getGitRepository()
 		if err != nil {
-			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
 
 		logrus.Debug("Cloned or imported repository")
 
-		commits, err := retrieval.LookupAllCommits(r)
+		danglingObjs, err := git.FindDanglingObjects(r, dir)
 		if err != nil {
-			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
-		logrus.Infof("Gathered %d commits for repo %s", len(commits), repoURL)
 
-		// Process all commits and gather results
-		blobCache := make(map[plumbing.Hash]struct{})
-		uniqueSecrets := make(map[string]processor.GitleaksResult)
-		for _, commit := range commits {
-			logrus.Debug("Processing commit: ", commit.Hash)
-			commitResults, err := processor.ProcessCommit(commit, blobCache, processor.GitleaksArgs{Config: gitleakConfig})
-			if err != nil {
-				logrus.Errorf("error processing commit %s: %s", commit.String(), err)
+		var createdRefs []string
+		for _, c := range danglingObjs.Commits {
+			logrus.Infof("Dangling commit: %s", c.Hash.String())
+			ref := fmt.Sprintf("refs/dangling/%s", c.Hash.String())
+			if err = git.MakeRef(r, ref, c); err != nil {
+				logrus.Warnf("Failed to create ref for dangling commit: %s", c.Hash.String())
 				continue
 			}
-			for _, result := range commitResults {
-				if _, exists := uniqueSecrets[result.Secret]; !exists {
-					results = append(results, result)
-					uniqueSecrets[result.Secret] = result
-				}
-			}
+			createdRefs = append(createdRefs, ref)
 		}
 
-		logrus.Infof("Processed all commits and found %d secrets for repo %s", len(results), repoURL)
+		var gitleaksArgs []string
+		if gitleakConfig != "" {
+			gitleaksArgs = append(gitleaksArgs, "-c", gitleakConfig)
+		}
 
-		if len(results) > 0 {
-			logrus.Infof("Writing results to %s", outputPath)
-			if err := cli.WriteResults(output, uniqueSecrets); err != nil {
-				logrus.Error(err)
+		if err = scanning.RunGitleaks(dir, outputPath, gitleaksArgs...); err != nil {
+			cli.ErrorExit(err)
+		}
+
+		if !keepRefs {
+			if err = git.RemoveReferences(r, createdRefs); err != nil {
 				cli.ErrorExit(err)
 			}
-		} else {
-			if _, err := os.Stat(outputPath); err == nil {
-				if err := os.Remove(outputPath); err != nil {
-					logrus.Error(err)
-					cli.ErrorExit(err)
-				}
-			}
 		}
-		logrus.Info("Scan completed successfully")
+
 	},
 }
 
-func getGitRepository() (*git.Repository, error) {
+func getGitRepository() (*gogit.Repository, string, error) {
 	var (
-		r   *git.Repository
+		r   *gogit.Repository
+		dir string = repoPath
 		err error
 	)
 	if repoURL != "" {
-		r, err = retrieval.CloneRepo(repoURL)
+		r, dir, err = git.CloneRepo(repoURL)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		logrus.Infof("Cloned repo: %s", repoURL)
 	} else {
-		r, err = retrieval.ExistingRepo(repoPath)
+		r, err = git.ExistingRepo(repoPath)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		logrus.Infof("Using existing repo: %s", repoPath)
 	}
-	return r, nil
+	return r, dir, nil
 }

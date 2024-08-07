@@ -32,5 +32,6 @@ type GitleaksResult struct {
 }
 
 type GitleaksArgs struct {
-	Config string `json:"config"`
+	Config  string `json:"config"`
+	LogOpts string `json:"logOpts"`
 }
