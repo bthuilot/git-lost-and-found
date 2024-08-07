@@ -19,11 +19,6 @@ type DanglingObjects struct {
 	Trees   []*object.Tree
 }
 
-type danglingObject struct {
-	hash    plumbing.Hash
-	objType string
-}
-
 func FindDanglingObjects(r *git.Repository, repoPath string) (DanglingObjects, error) {
 	var (
 		d    DanglingObjects
@@ -35,6 +30,8 @@ func FindDanglingObjects(r *git.Repository, repoPath string) (DanglingObjects, e
 	if err := cmd.Run(); err != nil {
 		return d, err
 	}
+
+	// Parse out objects
 	for scanner.Scan() {
 		line := scanner.Text()
 		if len(line) > 0 {

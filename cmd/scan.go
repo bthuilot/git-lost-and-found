@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
+	"strings"
 )
 
 var (
@@ -16,7 +17,9 @@ var (
 	repoURL       string
 	repoPath      string
 	outputPath    string
-	gitleakConfig string
+	scanner       string
+	scannerConfig string
+	userArgs      string
 	keepRefs      bool
 )
 
@@ -24,7 +27,9 @@ func init() {
 	scanCmd.PersistentFlags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
 	scanCmd.PersistentFlags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
 	scanCmd.PersistentFlags().StringVarP(&outputPath, "output", "o", "", "Path to the output directory")
-	scanCmd.PersistentFlags().StringVarP(&gitleakConfig, "gitleaks-config", "c", "", "Path to the gitleaks config file")
+	scanCmd.PersistentFlags().StringVarP(&scanner, "scanner", "s", "gitleaks", "Scanner to use (gitleaks, trufflehog)")
+	scanCmd.PersistentFlags().StringVarP(&scannerConfig, "scanner-config", "c", "", "Path to the scanner config file")
+	scanCmd.PersistentFlags().StringVar(&userArgs, "scanner-args", "", "additional arguments to pass to the scanner")
 	scanCmd.PersistentFlags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
 	_ = scanCmd.MarkPersistentFlagFilename("repo-path")
 	_ = scanCmd.MarkPersistentFlagFilename("gitleaks-config")
@@ -62,6 +67,7 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 
+		// TODO: additional support scanning for blobs
 		var createdRefs []string
 		for _, c := range danglingObjs.Commits {
 			logrus.Infof("Dangling commit: %s", c.Hash.String())
@@ -73,12 +79,19 @@ var scanCmd = &cobra.Command{
 			createdRefs = append(createdRefs, ref)
 		}
 
-		var gitleaksArgs []string
-		if gitleakConfig != "" {
-			gitleaksArgs = append(gitleaksArgs, "-c", gitleakConfig)
+		scannerArgs := strings.Split(userArgs, " ")
+		if scannerConfig != "" {
+			scannerArgs = append(scannerArgs, fmt.Sprintf("--config=%s", scannerConfig))
 		}
 
-		if err = scanning.RunGitleaks(dir, outputPath, gitleaksArgs...); err != nil {
+		switch scanner {
+		case "gitleaks":
+			err = scanning.RunGitleaks(dir, outputPath, scannerArgs...)
+		case "trufflehog":
+			err = scanning.RunTrufflehog(dir, outputPath, scannerArgs...)
+		}
+
+		if err != nil {
 			cli.ErrorExit(err)
 		}
 
