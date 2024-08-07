@@ -80,7 +80,7 @@ var scanCmd = &cobra.Command{
 		}
 
 		if !keepRefs {
-			go func() {
+			defer func() {
 				if err = git.RemoveReferences(r, createdRefs); err != nil {
 					logrus.Errorf("Failed to remove created refs: %s", err)
 				}
