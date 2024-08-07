@@ -49,9 +49,7 @@ var scanCmd = &cobra.Command{
 				cli.ErrorExit(err)
 			}
 		}
-		logrus.Infof("Scanning repository %s", repoURL)
 
-		// clone repo or import existing repo
 		r, err := getGitRepository()
 		if err != nil {
 			logrus.Error(err)
@@ -65,7 +63,7 @@ var scanCmd = &cobra.Command{
 			logrus.Error(err)
 			cli.ErrorExit(err)
 		}
-		logrus.Infof("Gathered %d commits", len(commits))
+		logrus.Infof("Gathered %d commits for repo %s", len(commits), repoURL)
 
 		// Process all commits and gather results
 		blobCache := make(map[plumbing.Hash]struct{})

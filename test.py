@@ -1,19 +1,38 @@
-import json
+import time
 import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import subprocess
 
-
 def get_repos_from_org(org_url):
     org_name = org_url.split("/")[-1]
-    api_url = f"https://api.github.com/orgs/{org_name}/repos"
-    response = requests.get(api_url)
-    if response.status_code == 200:
-        return [repo["html_url"] for repo in response.json()]
-    else:
-        print(f"Failed to fetch repositories for organization {org_name}")
-        return []
+    repos = []
+    
+    url = f"https://api.github.com/orgs/{org_name}/repos"
+    params = {'per_page': 100, 'page': 1}
+    
+    
+    while True:
+        time.sleep(.3)
+        response = requests.get(url, params=params)
+        data = response.json()
+        if response.status_code != 200 or not data:
+            break
+        repos.extend([repo['html_url'] for repo in data])
+        params['page'] += 1
+    
+    return repos
+
+
+# def get_repos_from_org(org_url):
+#     org_name = org_url.split("/")[-1]
+#     api_url = f"https://api.github.com/orgs/{org_name}/repos"
+#     response = requests.get(api_url)
+#     if response.status_code == 200:
+#         return [repo["html_url"] for repo in response.json()]
+#     else:
+#         print(f"Failed to fetch repositories for organization {org_name}")
+#         return []
 
 
 def scan_repo(repo_url):
@@ -164,17 +183,29 @@ def main():
         ],
     }
     repos_to_scan = []
-    import time
-    for org_url in list(set(data["organizations"])):
-        os.makedirs(os.path.join("results", org_url.split("/")[-1]), exist_ok=True)
-        repos = get_repos_from_org(org_url)
-        repos_to_scan += repos
-        time.sleep(1)
+    
+    # load repos from file else get repos from organizations above
+    if os.path.exists("results/repos.txt"):
+        with open("results/repos.txt", "r") as f:
+            repos_to_scan = f.read().splitlines()
+            
+    if len(repos_to_scan) > 0:
+        print(f"Found {len(repos_to_scan)} repositories to scan")
+    else:
+        for org_url in list(set(data["organizations"])):
+            os.makedirs(os.path.join("results", org_url.split("/")[-1]), exist_ok=True)
+            repos = get_repos_from_org(org_url)
+            print(f"Found {len(repos)} repositories in organization: {org_url}")
+            repos_to_scan += repos
 
-        # for repo_url in repos:
-        # scan_repo(repo_url)
-        # print(f"Finished scanning repository: {repo_url}")
-
+        repos_to_scan += data["repositories"]
+        
+    repos_to_scan = list(set(repos_to_scan))
+        
+    # save repos to file
+    with open("results/repos.txt", "w") as f:
+        f.write("\n".join(repos_to_scan))
+    
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = {
             executor.submit(scan_repo, repo_url): repo_url for repo_url in repos_to_scan
