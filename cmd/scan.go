@@ -69,8 +69,9 @@ var scanCmd = &cobra.Command{
 
 		// TODO: additional support scanning for blobs
 		var createdRefs []string
+		logrus.Infof("Found %d dangling commits", len(danglingObjs.Commits))
 		for _, c := range danglingObjs.Commits {
-			logrus.Infof("Dangling commit: %s", c.Hash.String())
+			logrus.Debugf("Dangling commit: %s", c.Hash.String())
 			ref := fmt.Sprintf("refs/dangling/%s", c.Hash.String())
 			if err = git.MakeRef(r, ref, c); err != nil {
 				logrus.Warnf("Failed to create ref for dangling commit: %s", c.Hash.String())
@@ -79,6 +80,7 @@ var scanCmd = &cobra.Command{
 			createdRefs = append(createdRefs, ref)
 		}
 
+		logrus.Infof("Created %d refs for dangling commits", len(createdRefs))
 		if !keepRefs {
 			defer func() {
 				if err = git.RemoveReferences(r, createdRefs); err != nil {
