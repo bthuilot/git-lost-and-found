@@ -26,6 +26,7 @@ func FindDanglingObjects(r *git.Repository, repoPath string) (DanglingObjects, e
 	)
 	cmd := exec.Command("git", "-C", repoPath, "fsck", "--lost-found")
 	cmd.Stdout = buff
+	cmd.Stderr = os.Stderr
 	scanner := bufio.NewScanner(buff)
 	if err := cmd.Run(); err != nil {
 		return d, err

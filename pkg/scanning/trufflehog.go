@@ -8,11 +8,24 @@ import (
 )
 
 func RunTrufflehog(repoPath string, outPath string, cliArgs ...string) error {
+	// check if bare repo
+	bare := false
+	_, gitHeadErr := os.Stat(fmt.Sprintf("%s/HEAD", repoPath))
+	_, dotGitErr := os.Stat(fmt.Sprintf("%s/.git", repoPath))
+	// check if .git directory exists
+	if os.IsNotExist(dotGitErr) && gitHeadErr == nil {
+		logrus.Debug("scanning trufflehog using --bare")
+		bare = true
+	}
+
 	args := []string{
 		"git",
 		fmt.Sprintf("file://%s", repoPath),
 		"--json",
 		"--no-fail",
+	}
+	if bare {
+		args = append(args, "--bare")
 	}
 	args = append(args, cliArgs...)
 	cmd := exec.Command("trufflehog", args...)

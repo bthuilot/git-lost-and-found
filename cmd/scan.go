@@ -32,7 +32,7 @@ func init() {
 	scanCmd.PersistentFlags().StringVar(&userArgs, "scanner-args", "", "additional arguments to pass to the scanner")
 	scanCmd.PersistentFlags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
 	_ = scanCmd.MarkPersistentFlagFilename("repo-path")
-	_ = scanCmd.MarkPersistentFlagFilename("gitleaks-config")
+	_ = scanCmd.MarkPersistentFlagFilename("scanner-config")
 	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
 	scanCmd.MarkFlagsOneRequired("repo-url", "repo-path")
 	rootCmd.AddCommand(scanCmd)
@@ -79,6 +79,14 @@ var scanCmd = &cobra.Command{
 			createdRefs = append(createdRefs, ref)
 		}
 
+		if !keepRefs {
+			go func() {
+				if err = git.RemoveReferences(r, createdRefs); err != nil {
+					logrus.Errorf("Failed to remove created refs: %s", err)
+				}
+			}()
+		}
+
 		scannerArgs := strings.Split(userArgs, " ")
 		if scannerConfig != "" {
 			scannerArgs = append(scannerArgs, fmt.Sprintf("--config=%s", scannerConfig))
@@ -93,12 +101,6 @@ var scanCmd = &cobra.Command{
 
 		if err != nil {
 			cli.ErrorExit(err)
-		}
-
-		if !keepRefs {
-			if err = git.RemoveReferences(r, createdRefs); err != nil {
-				cli.ErrorExit(err)
-			}
 		}
 
 	},
