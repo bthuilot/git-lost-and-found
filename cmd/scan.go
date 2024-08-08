@@ -60,7 +60,7 @@ var scanCmd = &cobra.Command{
 			cli.ErrorExit(err)
 		}
 
-		logrus.Debug("Cloned or imported repository")
+		logrus.Debugf("Cloned or imported repository '%s'", dir)
 
 		danglingObjs, err := git.FindDanglingObjects(r, dir)
 		if err != nil {
@@ -94,11 +94,13 @@ var scanCmd = &cobra.Command{
 			scannerArgs = append(scannerArgs, fmt.Sprintf("--config=%s", scannerConfig))
 		}
 
-		switch scanner {
+		switch strings.ToLower(scanner) {
 		case "gitleaks":
 			err = scanning.RunGitleaks(dir, outputPath, scannerArgs...)
 		case "trufflehog":
 			err = scanning.RunTrufflehog(dir, outputPath, scannerArgs...)
+		default:
+			cli.ErrorExit(fmt.Errorf("unknown scanner '%s'", scanner))
 		}
 
 		if err != nil {
