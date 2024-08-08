@@ -18,7 +18,7 @@ jobs:
           - goarch: arm64
             goos: windows
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v3
