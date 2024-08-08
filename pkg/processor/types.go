@@ -28,4 +28,10 @@ type GitleaksResult struct {
 	Tags        []string `json:"Tags"`
 	RuleID      string   `json:"RuleID"`
 	Fingerprint string   `json:"Fingerprint"`
+	RawFile     string   `json:"RawFile"`
+}
+
+type GitleaksArgs struct {
+	Config  string `json:"config"`
+	LogOpts string `json:"logOpts"`
 }

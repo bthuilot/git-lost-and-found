@@ -261,3 +261,4 @@ terraform.rc
 bin/*
 
 results/*
+local_testing/*
