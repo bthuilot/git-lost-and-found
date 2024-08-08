@@ -6,6 +6,8 @@ RUN git clone --depth=1 https://github.com/gitleaks/gitleaks.git /build/gitleaks
     make build &&\
     cp /build/gitleaks/gitleaks /bin/gitleaks
 
+RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
 ENV PATH="$PATH:/bin"
 
 WORKDIR /build/git-scanner
