@@ -3,6 +3,12 @@
 Git scanning tool designed to also scanning dangling commits, which many other tools miss.
 This scanning tool scan run either gitleaks or trufflehog over the full set of commits of a repository
 
+## Installing
+### Package manager
+```bash
+
+```
+
 ## Building Locally
 ```bash
 make build
