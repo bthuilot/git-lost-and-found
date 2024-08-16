@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bthuilot/git-scanner/pkg/cli"
 	"github.com/bthuilot/git-scanner/pkg/git"
 	"github.com/bthuilot/git-scanner/pkg/scanning"
 	gogit "github.com/go-git/go-git/v5"
@@ -41,30 +40,27 @@ func init() {
 var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "scan all commits of a git repository",
-	Run: func(cmd *cobra.Command, args []string) {
-		var (
-			output = os.Stdout
-			err    error
-		)
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var output = os.Stdout
 		if outputPath != "" && outputPath != "-" {
 			output, err = os.Create(outputPath)
-			defer output.Close()
 			if err != nil {
-				cli.ErrorExit(err)
+				return err
 			}
+			defer output.Close()
 		}
 
 		// clone repo or import existing repo
 		r, dir, err := getGitRepository()
 		if err != nil {
-			cli.ErrorExit(err)
+			return err
 		}
 
 		logrus.Debugf("Cloned or imported repository '%s'", dir)
 
 		danglingObjs, err := git.FindDanglingObjects(r, dir)
 		if err != nil {
-			cli.ErrorExit(err)
+			return err
 		}
 
 		// TODO: additional support scanning for blobs
@@ -100,13 +96,10 @@ var scanCmd = &cobra.Command{
 		case "trufflehog":
 			err = scanning.RunTrufflehog(dir, outputPath, scannerArgs...)
 		default:
-			cli.ErrorExit(fmt.Errorf("unknown scanner '%s'", scanner))
+			err = fmt.Errorf("unknown scanner '%s'", scanner)
 		}
 
-		if err != nil {
-			cli.ErrorExit(err)
-		}
-
+		return err
 	},
 }
 

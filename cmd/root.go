@@ -13,6 +13,10 @@ var rootCmd = &cobra.Command{
 	Long:  `git-scanner searches *all* commits in a git repository for credentials, including orphaned commits.`,
 }
 
+func init() {
+	rootCmd.SetErrPrefix("ERROR: ")
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

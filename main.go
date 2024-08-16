@@ -23,6 +23,5 @@ func init() {
 }
 
 func main() {
-	// TODO
 	cmd.Execute()
 }
