@@ -2,8 +2,6 @@ on:
   release:
     types: [created]
 
-
-
 jobs:
   releases-matrix:
     name: release binary
@@ -28,7 +26,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           ldflags: '-s -w'
-          binary_name: "git-scanner"
+          binary_name: "git-lost-and-found"
           extra_files: LICENSE README.md
           md5sum: FALSE
           sha256sum: TRUE
@@ -57,4 +55,4 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           push: true
-          tags: "ghcr.io/${{ github.repository_owner }}/git-scanner:${{ github.ref_name }}"
+          tags: "ghcr.io/${{ github.repository_owner }}/git-lost-and-found:${{ github.ref_name }}"

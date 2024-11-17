@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/bthuilot/git-scanner/cmd"
+	"github.com/bthuilot/git-lost-and-found/cmd"
 	"github.com/sirupsen/logrus"
 )
 

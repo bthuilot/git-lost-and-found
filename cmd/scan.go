@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bthuilot/git-scanner/pkg/git"
-	"github.com/bthuilot/git-scanner/pkg/scanning"
+	"github.com/bthuilot/git-lost-and-found/pkg/git"
+	"github.com/bthuilot/git-lost-and-found/pkg/scanning"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +16,7 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "Retrieve hanging commits and then run a scanner",
 	Long: `Retrieve all dangling commits in a git repository and then run a given program in the directory before cleaning up.
-The scanner command must be separated from the git-scanner command with '--'.
+The scanner command must be separated from the git-lost-and-found command with '--'.
 The command will be executed in the repository directory, and any '{}' will be replaced with the directory path in the command.
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

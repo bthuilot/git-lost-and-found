@@ -1,6 +1,5 @@
-
 GO_FILES = $(shell find . -name '*.go')
-BIN_NAME := $(shell basename $(CURDIR))
+BIN_NAME := "git-lost-and-found"
 BIN_DIR := ./bin
 BIN= $(BIN_DIR)/$(BIN_NAME)
 DOCKER_REPO=$(BIN_NAME)
