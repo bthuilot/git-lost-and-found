@@ -20,10 +20,12 @@ The scanner command must be separated from the git-scanner command with '--'.
 The command will be executed in the repository directory, and any '{}' will be replaced with the directory path in the command.
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		r, dir, err := getGitRepository()
+		logrus.Info("beginning scan")
+		r, dir, cleanup, err := getGitRepository()
 		if err != nil {
 			return err
 		}
+		defer cleanup()
 
 		logrus.WithField("repository_directory", dir).Info("Scanning repository")
 

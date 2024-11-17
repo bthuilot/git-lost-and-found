@@ -19,10 +19,11 @@ The refs are created in the format 'refs/dangling/<commit-hash>'.
 If -k is not set, the refs will be removed after the scanner command is executed.
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		r, dir, err := getGitRepository()
+		r, dir, cleanup, err := getGitRepository()
 		if err != nil {
 			return err
 		}
+		defer cleanup()
 
 		logrus.WithField("repository_directory", dir).Info("Scanning repository")
 

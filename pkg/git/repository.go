@@ -8,13 +8,14 @@ import (
 
 func CloneRepository(repoURL string, bare bool) (*git.Repository, string, error) {
 	// CLone to temp directory
-	tmpDir, err := os.MkdirTemp("", "*")
+	tmpDir, err := os.MkdirTemp("", "git-lost-and-found-*")
 	if err != nil {
 		return nil, "", err
 	}
 	repo, err := git.PlainClone(tmpDir, bare, &git.CloneOptions{
-		URL:    repoURL,
-		Mirror: bare,
+		URL:      repoURL,
+		Mirror:   bare,
+		Progress: os.Stderr,
 	})
 	return repo, tmpDir, err
 }

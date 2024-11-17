@@ -11,13 +11,20 @@ import (
 )
 
 var (
-	// Used for flags.
-	repoURL  string
+	/* Flags */
+	// repoURL is the URL of the git repository to scan
+	repoURL string
+	// repoPath is the path to the git repository to scan
 	repoPath string
+	// bare is a flag to clone or import the repository as a bare repository
+	bare bool
+	// keepRefs is a flag to keep refs created for dangling commits
 	keepRefs bool
-
+	// cleanup is a flag to remove the cloned repo after scanning
+	// NOTE: only valid when --repo-url is set
+	cleanup bool
+	// logLevel is the log level for the application
 	logLevel string
-	bare     bool
 )
 
 var rootCmd = &cobra.Command{
@@ -43,6 +50,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
 	rootCmd.PersistentFlags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
 	rootCmd.PersistentFlags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
+	rootCmd.PersistentFlags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
 	_ = rootCmd.MarkPersistentFlagFilename("repo-path")
 	rootCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
 	rootCmd.MarkFlagsOneRequired("repo-url", "repo-path")
@@ -55,24 +63,33 @@ func Execute() {
 	}
 }
 
-func getGitRepository() (*gogit.Repository, string, error) {
+func getGitRepository() (*gogit.Repository, string, func(), error) {
 	var (
 		r   *gogit.Repository
 		dir string = repoPath
 		err error
 	)
+	cleanupF := func() {}
 	if repoURL != "" {
 		r, dir, err = git.CloneRepository(repoURL, bare)
 		if err != nil {
-			return nil, "", err
+			return nil, "", cleanupF, err
 		}
 		logrus.Infof("Cloned repo: %s", repoURL)
+		cleanupF = func() {
+			if cleanup {
+				logrus.Debug("cleaning up cloned repo")
+				if err := os.RemoveAll(dir); err != nil {
+					logrus.Errorf("Failed to remove cloned repo: %s", err)
+				}
+			}
+		}
 	} else {
 		r, err = git.ImportRepository(repoPath)
 		if err != nil {
-			return nil, "", err
+			return nil, "", cleanupF, err
 		}
 		logrus.Infof("Using existing repo: %s", repoPath)
 	}
-	return r, dir, nil
+	return r, dir, cleanupF, nil
 }
