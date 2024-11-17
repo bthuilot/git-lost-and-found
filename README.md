@@ -1,7 +1,16 @@
-# git-scanner
+# git-lost-and-found
 
-Git scanning tool designed to also scanning dangling commits, which many other tools miss.
-This scanning tool scan run either gitleaks or trufflehog over the full set of commits of a repository
+Git scanning tool designed to find dangling commits.
+
+This tool is designed to be used in conjunction with other git scanning tools that leverage `git log` to search diffs.
+`git-lost-and-found` is designed to find commits that are not reachable by any branch or tag in the repository, and add named references to them.
+This allows other tools to find these commits and their changes, 
+since once they are reachable by a named reference they will be included in the output of `git log --all`.
+Some tools that can be used in conjunction with `git-lost-and-found` are:
+
+- [gitleaks](https://github.com/gitleaks/gitleaks)
+- [trufflehog](https://github.com/trufflesecurity/trufflehog)
+
 
 ## Installing
 ### Package manager
@@ -38,18 +47,24 @@ git-scanner scan --help
 ### Using a docker image
 ```bash
 docker run \
-  -v /my/repo/path:/repo -v /my/output/path:/output \
+  -v /my/repo/path:/repo \
   ghcr.io/bthuilot/git-scanner:latest scan \
-  --repo-path /repo --scanner "gitleaks" --output /output/results.json
+  --repo-path /repo -- trufflehog git file://. --no-verification
 ```
 
 ### Scanning an existing repo using gitleaks
+
 ```bash
-git-scanner scan --repo-path "/my/repo/path" --scanner "gitleaks" --output /tmp/results.json --scanner-config ~/gitleaks.toml  
+# NOTE: gitleaks will have to be installed on the system
+# git-scanner is not responsible for installing or configuring gitleaks
+git-scanner scan --repo-path "/my/repo/path" -- gitleaks detect .
+# OR  git-scanner scan --repo-path "/my/repo/path" -- gitleaks detect {}
 ```
 
 ### Clone and scan a repository with Trufflehog
 ```bash
-git-scanner scan --repo-url "https://github.com/torvalds/linux" --scanner "trufflehog" --output /tmp/results.json \
-  --scanner-args="--no-verification" # Additional args to pass to scanner
+# NOTE: trufflehog will have to be installed on the system
+# git-scanner is not responsible for installing or configuring trufflehog
+git-scanner scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
+# OR  git-scanner scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --no-verification
 ```
