@@ -1,4 +1,4 @@
-module github.com/bthuilot/git-scanner
+module github.com/bthuilot/git-lost-and-found
 
 go 1.22.3
 

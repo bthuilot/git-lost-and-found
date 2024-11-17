@@ -10,11 +10,11 @@ RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main
 
 ENV PATH="$PATH:/bin"
 
-WORKDIR /build/git-scanner
-COPY main.go go.mod go.sum Makefile /build/git-scanner/
-COPY pkg /build/git-scanner/pkg
-COPY cmd /build/git-scanner/cmd
+WORKDIR /build
+COPY main.go go.mod go.sum Makefile /build/
+COPY pkg /build/pkg
+COPY cmd /build/cmd
 
-RUN make build && cp /build/git-scanner/bin/git-scanner /bin/git-scanner
+RUN make build && cp /build/bin/git-lost-and-found /bin/git-lost-and-found
 
-ENTRYPOINT ["/bin/git-scanner"]
+ENTRYPOINT ["/bin/git-lost-and-found"]

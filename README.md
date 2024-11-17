@@ -18,7 +18,7 @@ Some tools that can be used in conjunction with `git-lost-and-found` are:
 Install using homebrew
 ```bash
 brew tap bthuilot/tap
-brew install bthuilot/tap/git-scanner
+brew install bthuilot/tap/git-lost-and-found
 ```
 
 ## Building Locally
@@ -29,7 +29,7 @@ Optionally a docker image can be built using the makefile.
 
 ```bash
 # clone the repo
-git clone github.com/bthuilot/git-scanner && cd git-scanner
+git clone github.com/bthuilot/git-lost-and-found && cd git-lost-and-found
 # To build the binary
 make build
 # Or to build a docker image
@@ -41,14 +41,14 @@ make build-docker
 
 ```bash
 # Use the help menu to see what options are available
-git-scanner scan --help
+git-lost-and-found scan --help
 ```
 
 ### Using a docker image
 ```bash
 docker run \
   -v /my/repo/path:/repo \
-  ghcr.io/bthuilot/git-scanner:latest scan \
+  ghcr.io/bthuilot/git-lost-and-found:latest scan \
   --repo-path /repo -- trufflehog git file://. --no-verification
 ```
 
@@ -56,15 +56,15 @@ docker run \
 
 ```bash
 # NOTE: gitleaks will have to be installed on the system
-# git-scanner is not responsible for installing or configuring gitleaks
-git-scanner scan --repo-path "/my/repo/path" -- gitleaks detect .
-# OR  git-scanner scan --repo-path "/my/repo/path" -- gitleaks detect {}
+# git-lost-and-found is not responsible for installing or configuring gitleaks
+git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect .
+# OR  git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect {}
 ```
 
 ### Clone and scan a repository with Trufflehog
 ```bash
 # NOTE: trufflehog will have to be installed on the system
-# git-scanner is not responsible for installing or configuring trufflehog
-git-scanner scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
-# OR  git-scanner scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --no-verification
+# git-lost-and-found is not responsible for installing or configuring trufflehog
+git-lost-and-found scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
+# OR  git-lost-and-found scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --no-verification
 ```

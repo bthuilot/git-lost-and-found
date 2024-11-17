@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bthuilot/git-scanner/pkg/git"
+	"github.com/bthuilot/git-lost-and-found/pkg/git"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
