@@ -10,22 +10,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	/* Flags */
-	// repoURL is the URL of the git repository to scan
-	repoURL string
-	// repoPath is the path to the git repository to scan
-	repoPath string
-	// bare is a flag to clone or import the repository as a bare repository
-	bare bool
-	// keepRefs is a flag to keep refs created for dangling commits
-	keepRefs bool
-	// cleanup is a flag to remove the cloned repo after scanning
-	// NOTE: only valid when --repo-url is set
-	cleanup bool
-	// logLevel is the log level for the application
-	logLevel string
-)
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "git-lost-and-found",
@@ -45,22 +35,6 @@ This allows for scanners that use 'git log' to search blob data to not miss any 
 
 func init() {
 	rootCmd.SetErrPrefix("ERROR: ")
-	scanCmd.PersistentFlags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
-	rootCmd.PersistentFlags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
-	rootCmd.PersistentFlags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
-	rootCmd.PersistentFlags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
-	rootCmd.PersistentFlags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
-	_ = rootCmd.MarkPersistentFlagFilename("repo-path")
-	rootCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
-	rootCmd.MarkFlagsOneRequired("repo-url", "repo-path")
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
 
 func getGitRepository() (*gogit.Repository, string, func(), error) {

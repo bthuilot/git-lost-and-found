@@ -1,7 +1,6 @@
 package scanning
 
 import (
-	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
@@ -10,7 +9,8 @@ import (
 
 func ExecScanner(dir string, cmdArgs []string) error {
 	if len(cmdArgs) == 0 {
-		return errors.New("no scanner command provided")
+		logrus.Warnf("no scanner command provided, exiting")
+		return nil
 	}
 
 	for i, arg := range cmdArgs {

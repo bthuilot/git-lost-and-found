@@ -8,7 +8,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	/* Flags */
+	// repoURL is the URL of the git repository to scan
+	repoURL string
+	// repoPath is the path to the git repository to scan
+	repoPath string
+	// bare is a flag to clone or import the repository as a bare repository
+	bare bool
+	// keepRefs is a flag to keep refs created for dangling commits
+	keepRefs bool
+	// cleanup is a flag to remove the cloned repo after scanning
+	// NOTE: only valid when --repo-url is set
+	cleanup bool
+	// logLevel is the log level for the application
+	logLevel string
+)
+
 func init() {
+	scanCmd.Flags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
+	scanCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
+	scanCmd.Flags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
+	scanCmd.Flags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
+	scanCmd.Flags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
+	scanCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
+	_ = scanCmd.MarkFlagFilename("repo-path")
+	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
+	scanCmd.MarkFlagsOneRequired("repo-url", "repo-path")
+
 	rootCmd.AddCommand(scanCmd)
 }
 
