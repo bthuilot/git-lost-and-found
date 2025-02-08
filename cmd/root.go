@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bthuilot/git-lost-and-found/pkg/git"
-	gogit "github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
-	"os"
-
 	"github.com/spf13/cobra"
+	"os"
+)
+
+var (
+	// logLevel is the log level for the application
+	logLevel string
+	// logFormat is the log format for the application
+	logFormat string
 )
 
 func Execute() {
@@ -28,6 +32,14 @@ This allows for scanners that use 'git log' to search blob data to not miss any 
 			return err
 		}
 		logrus.SetLevel(level)
+		switch logFormat {
+		case "text":
+			logrus.SetFormatter(&logrus.TextFormatter{})
+		case "json":
+			logrus.SetFormatter(&logrus.JSONFormatter{})
+		default:
+			return fmt.Errorf("invalid log format: %s", logFormat)
+		}
 
 		return nil
 	},
@@ -35,35 +47,6 @@ This allows for scanners that use 'git log' to search blob data to not miss any 
 
 func init() {
 	rootCmd.SetErrPrefix("ERROR: ")
-}
-
-func getGitRepository() (*gogit.Repository, string, func(), error) {
-	var (
-		r   *gogit.Repository
-		dir string = repoPath
-		err error
-	)
-	cleanupF := func() {}
-	if repoURL != "" {
-		r, dir, err = git.CloneRepository(repoURL, bare)
-		if err != nil {
-			return nil, "", cleanupF, err
-		}
-		logrus.Infof("Cloned repo: %s", repoURL)
-		cleanupF = func() {
-			if cleanup {
-				logrus.Debug("cleaning up cloned repo")
-				if err := os.RemoveAll(dir); err != nil {
-					logrus.Errorf("Failed to remove cloned repo: %s", err)
-				}
-			}
-		}
-	} else {
-		r, err = git.ImportRepository(repoPath)
-		if err != nil {
-			return nil, "", cleanupF, err
-		}
-		logrus.Infof("Using existing repo: %s", repoPath)
-	}
-	return r, dir, cleanupF, nil
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
+	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
 }
