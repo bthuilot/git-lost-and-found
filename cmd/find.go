@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/bthuilot/git-lost-and-found/pkg/git"
 	"github.com/bthuilot/git-lost-and-found/pkg/scanning"
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -21,27 +23,26 @@ var (
 	// cleanup is a flag to remove the cloned repo after scanning
 	// NOTE: only valid when --repo-url is set
 	cleanup bool
-	// logLevel is the log level for the application
-	logLevel string
 )
 
 func init() {
-	scanCmd.Flags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
-	scanCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
-	scanCmd.Flags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
-	scanCmd.Flags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
-	scanCmd.Flags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
-	scanCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
-	_ = scanCmd.MarkFlagFilename("repo-path")
-	scanCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
-	scanCmd.MarkFlagsOneRequired("repo-url", "repo-path")
+	findCmd.Flags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
+	//findCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
+	//findCmd.Flags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
+	findCmd.Flags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
+	findCmd.Flags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
+	findCmd.Flags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
+	findCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
+	_ = findCmd.MarkFlagFilename("repo-path")
+	findCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
+	findCmd.MarkFlagsOneRequired("repo-url", "repo-path")
 
-	rootCmd.AddCommand(scanCmd)
+	rootCmd.AddCommand(findCmd)
 }
 
-var scanCmd = &cobra.Command{
-	Use:   "scan",
-	Short: "Retrieve hanging commits and then run a scanner",
+var findCmd = &cobra.Command{
+	Use:   "find",
+	Short: "Find all hanging commits, reference them and then run a scanner",
 	Long: `Retrieve all dangling commits in a git repository and then run a given program in the directory before cleaning up.
 The scanner command must be separated from the git-lost-and-found command with '--'.
 The command will be executed in the repository directory, and any '{}' will be replaced with the directory path in the command.
@@ -91,4 +92,35 @@ The command will be executed in the repository directory, and any '{}' will be r
 
 		return nil
 	},
+}
+
+func getGitRepository() (*gogit.Repository, string, func(), error) {
+	var (
+		r   *gogit.Repository
+		dir string = repoPath
+		err error
+	)
+	cleanupF := func() {}
+	if repoURL != "" {
+		r, dir, err = git.CloneRepository(repoURL, bare)
+		if err != nil {
+			return nil, "", cleanupF, err
+		}
+		logrus.Infof("Cloned repo: %s", repoURL)
+		cleanupF = func() {
+			if cleanup {
+				logrus.Debug("cleaning up cloned repo")
+				if err := os.RemoveAll(dir); err != nil {
+					logrus.Errorf("Failed to remove cloned repo: %s", err)
+				}
+			}
+		}
+	} else {
+		r, err = git.ImportRepository(repoPath)
+		if err != nil {
+			return nil, "", cleanupF, err
+		}
+		logrus.Infof("Using existing repo: %s", repoPath)
+	}
+	return r, dir, cleanupF, nil
 }

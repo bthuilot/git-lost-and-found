@@ -8,6 +8,10 @@ DOCKER_REGISTRY=
 MAIN=./main.go
 ARGS=
 
+GOOS := $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
+CGO_ENABLED := $(shell go env CGO_ENABLED)
+
 ############
 # Building #
 ############
@@ -21,8 +25,11 @@ build: $(BIN)
 build-debug: $(GO_FILES)
 	@go build -gcflags "all=-N -l" -o $(BIN) $(MAIN)
 
-build-docker: $(GO_FILES)
+build-docker: $(BIN)
 	@docker build -t $(DOCKER_REGISTRY)$(DOCKER_REPO):$(DOCKER_TAG) .
+
+production-build: $(GO_FILES)
+	@go build -ldflags "-s -w" -o $(BIN)-$(GOOS)-$(GOARCH) $(MAIN)
 
 ###########
 # Running #
@@ -42,7 +49,7 @@ install: build
 	@cp ./$(BIN) /usr/local/bin/$(BIN_NAME)
 
 clean:
-	@rm -r $(BIN_DIR)/*
+	@rm -rf $(BIN_DIR)/* $(DIST)/*
 
 ###########
 # Linting #
