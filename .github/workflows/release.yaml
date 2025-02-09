@@ -1,0 +1,88 @@
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: 1.23
+
+jobs:
+  binary-releases-matrix:
+    name: release binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - name: setup go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      #- name: install cosign
+      #  uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e # v3.8.0
+      - name: build
+        run: |
+          make production-build CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
+      - name: create sha256
+        run: |
+          sha256sum ./bin/git-lost-and-found-${{ matrix.goos }}-${{ matrix.goarch }}  > ./bin/git-lost-and-found-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+      - name: upload release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: | 
+          gh release upload ${{ github.ref_name }} \
+            ./bin/git-lost-and-found-${{ matrix.goos }}-${{ matrix.goarch }} \
+            ./bin/git-lost-and-found-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+  publish-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+    env:
+      TAG: "ghcr.io/${{ github.repository_owner }}/git-lost-and-found:${{ github.ref_name }}"
+      LATEST: "ghcr.io/${{ github.repository_owner }}/git-lost-and-found:latest"
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: setup qemu
+        uses: docker/setup-qemu-action@4574d27a4764455b42196d70a065bc6853246a25 # v3
+      - name: setup buildx
+        uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3
+      - name: install cosign
+        uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e # v3.8.0
+      - name: docker build
+        id: docker-build
+        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ env.TAG }},${{ env.LATEST }}
+      - name: sign image
+        env:
+          DIGEST: ${{ steps.docker-build.outputs.digest }}
+        run: cosign sign --yes ${TAG}@${DIGEST} ${LATEST}@${DIGEST}
