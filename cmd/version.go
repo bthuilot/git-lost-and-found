@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	Version string = "dev"
-	Commit  string = "N/A"
+	Version = "dev"
+	Commit  = "N/A"
 )
 
 func init() {

@@ -12,13 +12,19 @@ GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
 CGO_ENABLED := $(shell go env CGO_ENABLED)
 
+VERSION := $(shell git describe --tags --exact-match 2>/dev/null || echo "dev")
+COMMIT_SHA := $(shell git rev-parse HEAD)
+DIRTY := $(shell git diff --quiet || echo "-dirty")
+
 ############
 # Building #
 ############
 .PHONY: build build-debug build-docker production-build
 
 $(BIN): $(GO_FILES)
-	@go build -ldflags "-s -w" -o $(BIN) $(MAIN)
+	@go build -ldflags \
+		"-s -w -X 'github.com/bthuilot/git-lost-and-found/cmd.Version=$(VERSION)' -X 'github.com/bthuilot/git-lost-and-found/cmd.Commit=$(COMMIT_SHA)$(DIRTY)'" \
+		-o $(BIN) $(MAIN)
 
 build: $(BIN)
 
@@ -29,7 +35,9 @@ build-docker: $(BIN)
 	@docker build -t $(DOCKER_REGISTRY)$(DOCKER_REPO):$(DOCKER_TAG) .
 
 production-build: $(GO_FILES)
-	@go build -ldflags "-s -w" -o $(BIN)-$(GOOS)-$(GOARCH) $(MAIN)
+	@go build -ldflags \
+		"-s -w -X 'github.com/bthuilot/git-lost-and-found/cmd.Version=$(VERSION)' -X 'github.com/bthuilot/git-lost-and-found/cmd.Commit=$(COMMIT_SHA)$(DIRTY)'" \
+		-o $(BIN)-$(GOOS)-$(GOARCH) $(MAIN)
 
 ###########
 # Running #
@@ -50,7 +58,7 @@ install: build
 	@cp $(BIN) /usr/local/bin/$(BIN_NAME)
 
 clean:
-	@rm -rf $(BIN_DIR)/* $(DIST)/*
+	@rm -rf $(BIN_DIR)/*
 
 ###########
 # Linting #
