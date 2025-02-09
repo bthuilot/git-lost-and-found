@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  GO_VERSION: 1.23
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses:  actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+            persist-credentials: false
+      - name: setup go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@e60da84bfae8c7920a47be973d75e15710aa8bd7 # v6
+        with:
+          version: v1.60
+      - name: test
+        run: go test -v ./...

@@ -30,9 +30,9 @@ Optionally a docker image can be built using the makefile.
 ```bash
 # clone the repo
 git clone github.com/bthuilot/git-lost-and-found && cd git-lost-and-found
-# To build the binary
+# To build the binary (output in bin/)
 make build
-# Or to build a docker image
+# Or to build a docker image (tagged as git-lost-and-found:dev)
 make build-docker
 ```
 
@@ -48,7 +48,7 @@ git-lost-and-found scan --help
 ```bash
 docker run \
   -v /my/repo/path:/repo \
-  ghcr.io/bthuilot/git-lost-and-found:latest scan \
+  ghcr.io/bthuilot/git-lost-and-found:latest find \
   --repo-path /repo -- trufflehog git file://. --no-verification
 ```
 
@@ -57,7 +57,7 @@ docker run \
 ```bash
 # NOTE: gitleaks will have to be installed on the system
 # git-lost-and-found is not responsible for installing or configuring gitleaks
-git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect .
+git-lost-and-found find --repo-path "/my/repo/path" -- gitleaks detect .
 # OR  git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect {}
 ```
 
@@ -65,6 +65,6 @@ git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect .
 ```bash
 # NOTE: trufflehog will have to be installed on the system
 # git-lost-and-found is not responsible for installing or configuring trufflehog
-git-lost-and-found scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
+git-lost-and-found find --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
 # OR  git-lost-and-found scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --no-verification
 ```

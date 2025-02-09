@@ -15,7 +15,7 @@ CGO_ENABLED := $(shell go env CGO_ENABLED)
 ############
 # Building #
 ############
-.PHONY: build build-debug
+.PHONY: build build-debug build-docker production-build
 
 $(BIN): $(GO_FILES)
 	@go build -ldflags "-s -w" -o $(BIN) $(MAIN)
@@ -35,6 +35,7 @@ production-build: $(GO_FILES)
 # Running #
 ###########
 
+.PHONY: run run-debug install clean fmt lint test
 run: build
 	@./$(BIN) $(ARGS)
 
@@ -46,7 +47,7 @@ run-debug: build-debug
 ####################
 
 install: build
-	@cp ./$(BIN) /usr/local/bin/$(BIN_NAME)
+	@cp $(BIN) /usr/local/bin/$(BIN_NAME)
 
 clean:
 	@rm -rf $(BIN_DIR)/* $(DIST)/*
@@ -59,7 +60,6 @@ fmt:
 	@gofmt -l -s -w .
 
 lint:
-	@test -z $(gofmt -l .)
 	@golangci-lint run
 
 ###########

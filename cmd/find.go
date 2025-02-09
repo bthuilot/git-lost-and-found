@@ -27,8 +27,8 @@ var (
 
 func init() {
 	findCmd.Flags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
-	//findCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
-	//findCmd.Flags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
+	// findCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
+	// findCmd.Flags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
 	findCmd.Flags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
 	findCmd.Flags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
 	findCmd.Flags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")

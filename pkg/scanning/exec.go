@@ -22,6 +22,7 @@ func ExecScanner(dir string, cmdArgs []string) error {
 		"args":    cmdArgs[1:],
 	}).Debug("executing scanner command")
 
+	// #nosec G204
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -1,0 +1,12 @@
+linters:
+  enable:
+    - errname
+    - exhaustive
+    - exptostd
+    - goconst
+    - gocritic
+    - gofmt
+    - iface
+    - ireturn
+    - gosec
+    - misspell
