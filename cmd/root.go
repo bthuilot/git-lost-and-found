@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var (
@@ -47,6 +48,7 @@ This allows for scanners that use 'git log' to search blob data to not miss any 
 
 func init() {
 	rootCmd.SetErrPrefix("ERROR: ")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
+	rootCmd.PersistentFlags().
+		StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
 }

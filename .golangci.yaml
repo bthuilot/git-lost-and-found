@@ -1,10 +1,16 @@
+version: "2"
 linters:
   enable:
     - errname
     - exhaustive
     - goconst
     - gocritic
-    - gofmt
-    - ireturn
     - gosec
     - misspell
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines

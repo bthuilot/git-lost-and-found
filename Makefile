@@ -65,10 +65,10 @@ clean:
 ###########
 
 fmt:
-	@gofmt -l -s -w .
+	@golangci-lint fmt ./...
 
 lint:
-	@golangci-lint run
+	@golangci-lint run ./...
 
 ###########
 # Testing #

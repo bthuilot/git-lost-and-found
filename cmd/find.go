@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/bthuilot/git-lost-and-found/pkg/git"
 	"github.com/bthuilot/git-lost-and-found/pkg/scanning"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var (
@@ -26,13 +27,17 @@ var (
 )
 
 func init() {
-	findCmd.Flags().BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
+	findCmd.Flags().
+		BoolVarP(&bare, "bare", "b", true, "clone or import the repository as a bare repository")
 	// findCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "log level (debug, info, warn, error, fatal, panic)")
 	// findCmd.Flags().StringVar(&logFormat, "log-format", "text", "log format (text, json)")
 	findCmd.Flags().StringVarP(&repoURL, "repo-url", "r", "", "URL of the git repository to scan")
-	findCmd.Flags().StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
-	findCmd.Flags().BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
-	findCmd.Flags().BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
+	findCmd.Flags().
+		StringVarP(&repoPath, "repo-path", "p", "", "Path to the git repository to scan")
+	findCmd.Flags().
+		BoolVarP(&keepRefs, "keep-refs", "k", false, "Keep refs created for dangling commits")
+	findCmd.Flags().
+		BoolVarP(&cleanup, "cleanup", "c", false, "Remove the cloned repository after scanning")
 	_ = findCmd.MarkFlagFilename("repo-path")
 	findCmd.MarkFlagsMutuallyExclusive("repo-url", "repo-path")
 	findCmd.MarkFlagsOneRequired("repo-url", "repo-path")
@@ -75,7 +80,8 @@ The command will be executed in the repository directory, and any '{}' will be r
 			createdRefs = append(createdRefs, ref)
 		}
 
-		logrus.WithField("created_refs_amt", len(createdRefs)).Info("created refs for dangling commits")
+		logrus.WithField("created_refs_amt", len(createdRefs)).
+			Info("created refs for dangling commits")
 		if !keepRefs {
 			defer func() {
 				removeErr := git.RemoveReferences(r, createdRefs)
@@ -97,7 +103,7 @@ The command will be executed in the repository directory, and any '{}' will be r
 func getGitRepository() (*gogit.Repository, string, func(), error) {
 	var (
 		r   *gogit.Repository
-		dir string = repoPath
+		dir = repoPath
 		err error
 	)
 	cleanupF := func() {}

@@ -2,13 +2,14 @@ package git
 
 import (
 	"crypto/rand"
+	"testing"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	memoryStorage "github.com/go-git/go-git/v5/storage/memory"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestMakeRef(t *testing.T) {
