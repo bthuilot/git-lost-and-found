@@ -1,10 +1,11 @@
 package scanning
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 func ExecScanner(dir string, cmdArgs []string) error {
