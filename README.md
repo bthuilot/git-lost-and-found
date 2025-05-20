@@ -47,9 +47,9 @@ git-lost-and-found scan --help
 ### Using a docker image
 ```bash
 docker run \
-  -v /my/repo/path:/repo \
+  -v /my/repo/path:/target \
   ghcr.io/bthuilot/git-lost-and-found:latest find \
-  --repo-path /repo -- trufflehog git file://. --no-verification
+  --repo-path /target -- trufflehog git file://. --no-verification
 ```
 
 ### Scanning an existing repo using gitleaks
