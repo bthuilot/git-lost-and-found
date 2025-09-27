@@ -1,14 +1,22 @@
+// Copyright (C) 2025 Bryce Thuilot
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the FSF, either version 3 of the License, or (at your option) any later version.
+// See the LICENSE file in the root of this repository for full license text or
+// visit: <https://www.gnu.org/licenses/gpl-3.0.html>.
+
 package cmd
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/bthuilot/git-lost-and-found/pkg/git"
-	"github.com/bthuilot/git-lost-and-found/pkg/scanning"
+	"github.com/bthuilot/git-lost-and-found/v2/pkg/git"
+	"github.com/bthuilot/git-lost-and-found/v2/pkg/scanning"
 	gogit "github.com/go-git/go-git/v5"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var (
@@ -53,45 +61,49 @@ The scanner command must be separated from the git-lost-and-found command with '
 The command will be executed in the repository directory, and any '{}' will be replaced with the directory path in the command.
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		logrus.Info("beginning scan")
+		zap.L().Info("beginning scan")
 		r, dir, cleanup, err := getGitRepository()
 		if err != nil {
 			return err
 		}
 		defer cleanup()
 
-		logrus.WithField("repository_directory", dir).Info("Scanning repository")
+		zap.L().Info("Scanning repository", zap.String("repository-directory", dir))
 
 		// TODO: additional support scanning for blobs
 		danglingObjs, err := git.FindDanglingObjects(r, dir)
 		if err != nil {
 			return err
 		}
-		logrus.WithField("dangling_commits_amt", len(danglingObjs.Commits)).Info("dangling commits")
+		zap.L().
+			Info("dangling commits", zap.Int("dangling-commits-amount", len(danglingObjs.Commits)))
 
 		var createdRefs []string
 		for _, c := range danglingObjs.Commits {
-			logrus.Debugf("Dangling commit: %s", c.Hash.String())
+			zap.L().
+				Debug("found dangling commit", zap.String("dangling-commit-sha", c.Hash.String()))
 			ref := fmt.Sprintf("refs/dangling/%s", c.Hash.String())
 			if err = git.MakeRef(r, ref, c); err != nil {
-				logrus.Warnf("Failed to create ref for dangling commit: %s", c.Hash.String())
+				zap.L().
+					Error("failed to create ref for dangling commit", zap.Error(err), zap.String("danling-commit-sha", c.Hash.String()))
 				continue
 			}
 			createdRefs = append(createdRefs, ref)
 		}
 
-		logrus.WithField("created_refs_amt", len(createdRefs)).
-			Info("created refs for dangling commits")
+		zap.L().
+			Info("created refs for dangling commits", zap.Int("created-refs-amount", len(createdRefs)))
 		if !keepRefs {
 			defer func() {
 				removeErr := git.RemoveReferences(r, createdRefs)
 				if removeErr != nil {
-					logrus.Errorf("Failed to remove created refs: %s", removeErr)
+					zap.L().Error("failed to remove created refs", zap.Error(removeErr))
 				}
 			}()
 		}
 
-		logrus.Debug("Executing scanner")
+		zap.L().
+			Debug("executing scanner", zap.String("directory", dir), zap.Strings("arguments", args))
 		if err = scanning.ExecScanner(dir, args); err != nil {
 			return err
 		}
@@ -112,12 +124,12 @@ func getGitRepository() (*gogit.Repository, string, func(), error) {
 		if err != nil {
 			return nil, "", cleanupF, err
 		}
-		logrus.Infof("Cloned repo: %s", repoURL)
+		zap.L().Info("cloned repository", zap.String("repository-url", repoURL))
 		cleanupF = func() {
 			if cleanup {
-				logrus.Debug("cleaning up cloned repo")
+				zap.L().Debug("cleaning up cloned repo")
 				if err := os.RemoveAll(dir); err != nil {
-					logrus.Errorf("Failed to remove cloned repo: %s", err)
+					zap.L().Error("failed to remove cloned repo", zap.Error(err))
 				}
 			}
 		}
@@ -126,7 +138,7 @@ func getGitRepository() (*gogit.Repository, string, func(), error) {
 		if err != nil {
 			return nil, "", cleanupF, err
 		}
-		logrus.Infof("Using existing repo: %s", repoPath)
+		zap.L().Info("Using existing cloned repository", zap.String("repository-path", repoPath))
 	}
 	return r, dir, cleanupF, nil
 }
