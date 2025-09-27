@@ -1,3 +1,11 @@
+// Copyright (C) 2025 Bryce Thuilot
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the FSF, either version 3 of the License, or (at your option) any later version.
+// See the LICENSE file in the root of this repository for full license text or
+// visit: <https://www.gnu.org/licenses/gpl-3.0.html>.
+
 package git
 
 import (
@@ -11,7 +19,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 type DanglingObjects struct {
@@ -39,7 +47,7 @@ func FindDanglingObjects(r *git.Repository, repoPath string) (DanglingObjects, e
 		if len(line) > 0 {
 			split := strings.Split(line, " ")
 			if len(split) != 3 {
-				logrus.Warn("Unexpected output from git fsck: ", line)
+				zap.L().Warn("unexpected output from git fsck", zap.String("git-fsck-output", line))
 				continue
 			}
 			hash := plumbing.NewHash(split[2])
