@@ -6,7 +6,7 @@
 # See the LICENSE file in the root of this repository for full license text or
 # visit: <https://www.gnu.org/licenses/gpl-3.0.html>.
 
-FROM golang:1.25-alpine@sha256:b6ed3fd0452c0e9bcdef5597f29cc1418f61672e9d3a2f55bf02e7222c014abd AS builder
+FROM golang:1.25-alpine@sha256:aee43c3ccbf24fdffb7295693b6e33b21e01baec1b2a55acc351fde345e9ec34 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG LDFLAGS="-w -s"
@@ -19,7 +19,7 @@ COPY cmd/ cmd/
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     go build -ldflags="${LDFLAGS}" -trimpath -o git-lost-and-found main.go
 
-FROM alpine/git:latest@sha256:bd54f921f6d803dfa3a4fe14b7defe36df1b71349a3e416547e333aa960f86e3
+FROM alpine/git:latest@sha256:94b40c2135951103e0c5c7db07ae4cf6e935644a717e05d17f0c540db47683af
 
 ENV PATH="$PATH:/usr/local/bin"
 COPY --from=builder /build/git-lost-and-found /git-lost-and-found
