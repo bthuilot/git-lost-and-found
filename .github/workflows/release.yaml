@@ -6,6 +6,10 @@
 # See the LICENSE file in the root of this repository for full license text or
 # visit: <https://www.gnu.org/licenses/gpl-3.0.html>.
 
+on:
+  release:
+    types: [created]
+
 permissions:
   contents: read
 
