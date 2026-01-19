@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Bryce Thuilot
+// Copyright (C) 2024-2026 Bryce Thuilot
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,10 +54,10 @@ func init() {
 }
 
 var findCmd = &cobra.Command{
-	Use:   "find",
-	Short: "Find all hanging commits, reference them and then run a scanner",
+	Use:   "find [flags] -- [optional command]",
+	Short: "Find all hanging commits and add references to them. Optionally run a command once references are created",
 	Long: `Retrieve all dangling commits in a git repository and then run a given program in the directory before cleaning up.
-The scanner command must be separated from the git-lost-and-found command with '--'.
+A command can be added to the positional arguments prefixed with '--', that will run once the refences are created and before cleanup.
 The command will be executed in the repository directory, and any '{}' will be replaced with the directory path in the command.
 `,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
