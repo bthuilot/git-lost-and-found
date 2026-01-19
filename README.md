@@ -46,11 +46,17 @@ DOCKER_IMAGE=git-lost-and-found:dev make docker-build
 ## Running
 
 ```bash
-# Find dangling commits and save
-# as refs
-git-lost-and-found find --keep-refs
+# Find dangling commits and don't remove on cleanup
+git-lost-and-found find --repo-path . --keep-refs
 
-git-lost-and-found find 
+# Find danling refs, then run gitleaks
+# once complete, remove created references
+git-lost-and-found find --repo-path . -- gitleaks detect
+
+# clone the linux kernel, find dangling refs,
+# run trufflehog, then remove cloneded directory
+git-lost-and-found find --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --json
+
 # Use the help menu to see what options are available
 git-lost-and-found find --help
 ```
