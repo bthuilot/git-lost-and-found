@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Bryce Thuilot
+# Copyright (C) 2024-2026 Bryce Thuilot
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,8 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
-BIN= $(LOCALBIN)/$(BIN_NAME)
+BIN = $(LOCALBIN)/$(BIN_NAME)
+BIN_DEBUG = $(LOCALBIN)/$(BIN_NAME)-debug
 ARGS ?= 
 
 MAIN=./main.go
@@ -28,7 +29,8 @@ COMMIT_SHA := $(shell git rev-parse HEAD)
 DIRTY := $(shell git diff --quiet || echo "-dirty")
 BUILD_TIME := $(shell TZ="UTC" date -Iseconds)
 
-LD_FLAGS ?= -s -w -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.version=$(VERSION)' -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.gitCommit=$(COMMIT_SHA)$(DIRTY)' -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.buildTime=$(BUILD_TIME)'
+METADATA_LD_FLAGS = -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.version=$(VERSION)' -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.gitCommit=$(COMMIT_SHA)$(DIRTY)' -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.buildTime=$(BUILD_TIME)'
+LD_FLAGS ?= -s -w
 
 ############
 # Building #
@@ -36,14 +38,17 @@ LD_FLAGS ?= -s -w -X 'github.com/bthuilot/git-lost-and-found/v2/cmd.version=$(VE
 .PHONY: build build-debug build-docker production-build
 
 $(BIN): $(GO_FILES)
-	go build -ldflags "$(LD_FLAGS)" -trimpath -o $(BIN) $(MAIN)
+	go build -ldflags "$(LD_FLAGS) $(METADATA_LD_FLAGS)" -trimpath -o $(BIN) $(MAIN)
 
+
+.PHONY: build
 build: $(BIN)
 
+.PHONY: build-debug
 build-debug: $(GO_FILES)
 	@go build -gcflags "all=-N -l" -o $(BIN)-debug $(MAIN)
 
-build-docker:
+docker-build:
 	@docker build -t $(DOCKER_IMAGE) --build-arg LD_FLAGS="$(LD_FLAGS)" .
 
 ###########

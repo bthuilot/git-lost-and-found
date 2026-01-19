@@ -1,5 +1,10 @@
 # git-lost-and-found
 
+[![go report card](https://goreportcard.com/badge/github.com/bthuilot/git-lost-and-found/v2)](https://goreportcard.com/report/github.com/bthuilot/git-lost-and-found/v2)
+[![GitHub Release](https://img.shields.io/github/v/release/crashappsec/ocular)](https://github.com/bthuilot/git-lost-and-found/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+
 Git scanning tool designed to find dangling commits.
 
 This tool is designed to be used in conjunction with other git scanning tools that leverage `git log` to search diffs.
@@ -30,41 +35,62 @@ Optionally a docker image can be built using the makefile.
 ```bash
 # clone the repo
 git clone github.com/bthuilot/git-lost-and-found && cd git-lost-and-found
+
 # To build the binary (output in bin/)
 make build
+
 # Or to build a docker image (tagged as git-lost-and-found:dev)
-make build-docker
+DOCKER_IMAGE=git-lost-and-found:dev make docker-build
 ```
 
 ## Running
 
-
 ```bash
+# Find dangling commits and save
+# as refs
+git-lost-and-found find --keep-refs
+
+git-lost-and-found find 
 # Use the help menu to see what options are available
-git-lost-and-found scan --help
+git-lost-and-found find --help
 ```
 
-### Using a docker image
+## CI Script 
+
+A bash script is also provided to enable existing CI
+infrastrucre to perform the lost and found lookup for references.
+THe only requirements for the script are `sh`, `curl` and `git`.
+
 ```bash
-docker run \
-  -v /my/repo/path:/target \
+# this assumes the cwd is inside a git directory
+sh -c "$(curl -fsSL https://git-lf.thuilot.io/ci-scan)"
+```
+
+## Example scans
+
+
+#### Scanning a local git repository with trufflehog (via Docker)
+
+```bash
+# git repository cloned to /my/repo/path
+docker run -v /my/repo/path:/target \
   ghcr.io/bthuilot/git-lost-and-found:latest find \
-  --repo-path /target -- trufflehog git file://. --no-verification
+  --repo-path /target \
+  -- trufflehog git file://. --no-verification
 ```
 
-### Scanning an existing repo using gitleaks
+### Scanning an existing repo using gitleaks (via CLI)
 
 ```bash
+# git repository cloned to /my/repo/path
 # NOTE: gitleaks will have to be installed on the system
-# git-lost-and-found is not responsible for installing or configuring gitleaks
-git-lost-and-found find --repo-path "/my/repo/path" -- gitleaks detect .
-# OR  git-lost-and-found scan --repo-path "/my/repo/path" -- gitleaks detect {}
+git-lost-and-found find --repo-path "/my/repo/path" \
+	-- gitleaks detect .
 ```
 
-### Clone and scan a repository with Trufflehog
+### Clone and scan a repository with Trufflehog (via Docker)
 ```bash
 # NOTE: trufflehog will have to be installed on the system
-# git-lost-and-found is not responsible for installing or configuring trufflehog
-git-lost-and-found find --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://. --no-verification
-# OR  git-lost-and-found scan --repo-url "https://github.com/torvalds/linux" -- trufflehog git file://{} --no-verification
+git-lost-and-found find --repo-url "https://github.com/torvalds/linux" \
+	-- trufflehog git file://. --no-verification
 ```
