@@ -1,7 +1,7 @@
 # git-lost-and-found
 
 [![go report card](https://goreportcard.com/badge/github.com/bthuilot/git-lost-and-found/v2)](https://goreportcard.com/report/github.com/bthuilot/git-lost-and-found/v2)
-[![GitHub Release](https://img.shields.io/github/v/release/crashappsec/ocular)](https://github.com/bthuilot/git-lost-and-found/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/bthuilot/git-lost-and-found)](https://github.com/bthuilot/git-lost-and-found/releases)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 
